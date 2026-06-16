@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Big Lazy Seals — Mission Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:       #080808;
+  --bg1:      #0f0f0f;
+  --bg2:      #141414;
+  --bg3:      #1a1a1a;
+  --gold:     #C8A830;
+  --gold-l:   #E2C050;
+  --gold-d:   #7A6420;
+  --gold-bg:  rgba(200,168,48,.08);
+  --gold-bdr: rgba(200,168,48,.20);
+  --text:     #EDE5CC;
+  --text-2:   #8A7D60;
+  --text-3:   #3E3830;
+  --urg:      #C84840;
+  --urg-bg:   rgba(200,72,64,.10);
+  --norm:     #C89828;
+  --norm-bg:  rgba(200,152,40,.10);
+  --done-c:   #3E9060;
+  --done-bg:  rgba(62,144,96,.10);
+  --prog-c:   #3878C8;
+  --prog-bg:  rgba(56,120,200,.10);
+  --todo-c:   #8A7D60;
+  --todo-bg:  rgba(138,125,96,.08);
+  --red:      #C84840;
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Hanken Grotesk','Noto Sans TC',sans-serif;
+  font-size:14px;line-height:1.6;min-height:100vh;
+}
+
+/* ───── HEADER ───── */
+.hdr{
+  background:rgba(8,8,8,.95);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--gold-bdr);
+  padding:0 28px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-seal{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--gold-bg);border:1px solid var(--gold-d);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+}
+.brand-name{font-size:17px;font-weight:700;letter-spacing:.04em;color:var(--gold-l)}
+.brand-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-2);letter-spacing:.14em;text-transform:uppercase;margin-top:1px}
+.hdr-r{display:flex;align-items:center;gap:12px}
+.sync-pill{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 11px;border-radius:20px;
+  background:var(--bg2);border:1px solid var(--bg3);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--done-c);box-shadow:0 0 5px var(--done-c)}
+.dot.off{background:var(--red);box-shadow:0 0 5px var(--red)}
+.dot.loc{background:var(--gold);box-shadow:0 0 5px var(--gold)}
+.dot.wait{background:#555;box-shadow:none}
+.dot-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2)}
+
+/* ───── STAT BAR ───── */
+.statbar{
+  display:flex;align-items:center;
+  padding:0 28px;height:46px;gap:0;
+  border-bottom:1px solid rgba(200,168,48,.07);
+  background:rgba(200,168,48,.02);overflow-x:auto;
+}
+.stat{
+  display:flex;align-items:center;gap:8px;
+  padding:0 20px;height:100%;border-right:1px solid rgba(200,168,48,.07);
+  white-space:nowrap;
+}
+.stat:last-child{border-right:none}
+.stat-n{font-size:18px;font-weight:700;color:var(--gold-l);line-height:1}
+.stat-l{font-size:10px;color:var(--text-2);letter-spacing:.05em;margin-top:1px}
+
+/* ───── MAIN SPLIT ───── */
+.split{
+  display:grid;grid-template-columns:1fr 1fr;
+  min-height:calc(100vh - 104px);
+}
+@media(max-width:820px){.split{grid-template-columns:1fr}}
+
+/* ───── PANEL ───── */
+.panel{
+  border-right:1px solid rgba(200,168,48,.08);
+  display:flex;flex-direction:column;
+  min-height:0;
+}
+.panel:last-child{border-right:none}
+.panel-hdr{
+  padding:16px 22px 12px;
+  border-bottom:1px solid rgba(200,168,48,.07);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:58px;z-index:100;
+  background:rgba(8,8,8,.96);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+}
+.panel-ttl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+.panel-ttl .ic{font-size:14px}
+.panel-body{padding:14px 22px 32px;display:flex;flex-direction:column;gap:10px}
+
+/* ───── BTN ───── */
+.btn{
+  padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:500;
+  cursor:pointer;font-family:inherit;transition:all .15s;border:none;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover{background:var(--gold-l)}
+.btn-ghost{background:none;border:1px solid var(--gold-bdr);color:var(--text-2)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:5px 11px;font-size:11.5px}
+.btn-icon{
+  width:28px;height:28px;padding:0;background:none;border:1px solid rgba(200,168,48,.15);
+  border-radius:6px;color:var(--text-2);cursor:pointer;font-size:14px;
+  display:inline-flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.btn-icon:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-bg)}
+
+/* ───── URGENCY BADGE ───── */
+.urg-tag{
+  font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.u-crit{background:var(--urg-bg);color:var(--urg);border:1px solid rgba(200,72,64,.25)}
+.u-norm{background:var(--norm-bg);color:var(--norm);border:1px solid rgba(200,152,40,.25)}
+
+/* ───── PROJECT CARD ───── */
+.pcard{
+  background:var(--bg1);border:1px solid rgba(200,168,48,.10);
+  border-radius:11px;padding:16px;cursor:pointer;
+  transition:all .17s;position:relative;overflow:hidden;
+}
+.pcard::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;border-radius:2px 0 0 2px;
+}
+.pcard.crit::before{background:var(--urg)}
+.pcard.norm::before{background:var(--gold-d)}
+.pcard:hover{background:var(--bg2);border-color:var(--gold-bdr);transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.pcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px}
+.pcard-name{font-size:14px;font-weight:600;color:var(--text);line-height:1.35;flex:1}
+.pcard-dates{
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2);
+  margin-bottom:10px;display:flex;align-items:center;gap:5px;
+}
+.pcard-notes{font-size:12.5px;color:var(--text-2);line-height:1.65;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prog-row{margin-bottom:9px}
+.prog-label{display:flex;justify-content:space-between;margin-bottom:4px}
+.prog-txt{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2)}
+.prog-bar{height:3px;background:rgba(200,168,48,.1);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));border-radius:2px;transition:width .4s}
+.pcard-foot{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.todo-cnt{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text-2)}
+
+/* ───── TODO ITEM ───── */
+.todo{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;border-radius:9px;
+  background:var(--bg1);border:1px solid rgba(200,168,48,.08);
+  cursor:pointer;transition:all .15s;
+}
+.todo:hover{background:var(--bg2);border-color:var(--gold-bdr)}
+.todo.done-item{opacity:.5}
+.todo-check{
+  width:18px;height:18px;border-radius:50%;border:1.5px solid var(--text-3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:10px;margin-top:1px;transition:all .15s;cursor:pointer;
+}
+.todo.done-item .todo-check{background:var(--done-c);border-color:var(--done-c);color:#fff}
+.todo-check:hover{border-color:var(--done-c)}
+.todo-main{flex:1;min-width:0}
+.todo-name{font-size:13.5px;font-weight:500;color:var(--text);line-height:1.38;margin-bottom:5px}
+.todo.done-item .todo-name{text-decoration:line-through;color:var(--text-2)}
+.todo-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.st-badge{font-size:10px;padding:1.5px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
+.st-done{background:var(--done-bg);color:var(--done-c);border:1px solid rgba(62,144,96,.25)}
+.st-prog{background:var(--prog-bg);color:var(--prog-c);border:1px solid rgba(56,120,200,.25)}
+.st-todo{background:var(--todo-bg);color:var(--todo-c);border:1px solid rgba(138,125,96,.18)}
+.diff-badge{font-family:'DM Mono',monospace;font-size:9.5px;padding:1.5px 6px;border-radius:3px;color:var(--text-2);background:var(--bg3);border:1px solid var(--bg3)}
+.proj-link{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--gold-d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.time-tag{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--text-2)}
+.dl-tag{font-family:'DM Mono',monospace;font-size:9.5px}
+.dl-tag.urg{color:var(--red)}.dl-tag.soon{color:var(--norm)}.dl-tag.ok{color:var(--done-c)}
+
+/* group headers */
+.grp-hdr{
+  display:flex;align-items:center;gap:7px;
+  font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--text-2);padding:4px 0 2px;margin-top:4px;
+}
+.grp-line{flex:1;height:1px;background:rgba(200,168,48,.07)}
+.grp-cnt{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text-2);background:var(--bg2);
+  border:1px solid rgba(200,168,48,.1);padding:1px 6px;border-radius:8px;
+}
+
+/* ───── EMPTY ───── */
+.empty{
+  text-align:center;padding:28px 16px;color:var(--text-3);
+  font-size:12.5px;line-height:1.75;
+  border:1px dashed rgba(200,168,48,.1);border-radius:10px;
+}
+
+/* ───── BANNER ───── */
+.banner{
+  display:none;margin:12px 28px 0;
+  background:var(--gold-bg);border:1px solid var(--gold-bdr);
+  border-radius:8px;padding:10px 16px;
+  font-size:12px;color:var(--text-2);
+  align-items:center;gap:9px;flex-wrap:wrap;
+}
+.banner a{color:var(--gold);cursor:pointer;text-decoration:underline}
+.banner .x{margin-left:auto;cursor:pointer;font-size:15px;opacity:.6}
+.banner .x:hover{opacity:1}
+
+/* ───── IN-PROGRESS WARNING ───── */
+.warn{
+  display:none;align-items:center;gap:7px;
+  font-size:11.5px;color:var(--urg);padding:8px 14px;
+  background:var(--urg-bg);border:1px solid rgba(200,72,64,.2);
+  border-radius:7px;margin-bottom:4px;
+}
+
+/* ───── MODAL ───── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.9);
+  z-index:500;display:flex;align-items:center;justify-content:center;
+  padding:18px;opacity:0;pointer-events:none;transition:opacity .18s;
+}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--bg1);border:1px solid var(--gold-bdr);
+  border-radius:14px;width:100%;max-width:500px;max-height:90vh;
+  overflow-y:auto;padding:24px;
+  box-shadow:0 24px 72px rgba(0,0,0,.7),0 0 30px rgba(200,168,48,.05);
+}
+.m-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.m-title{font-size:15px;font-weight:700;letter-spacing:.04em;color:var(--gold-l)}
+.btn-x{background:none;border:none;color:var(--text-2);font-size:18px;cursor:pointer;padding:2px;line-height:1;transition:color .15s}
+.btn-x:hover{color:var(--text)}
+.form{display:flex;flex-direction:column;gap:13px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.field{display:flex;flex-direction:column;gap:5px}
+.lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2);letter-spacing:.08em;text-transform:uppercase}
+.field input,.field textarea,.field select{
+  background:rgba(200,168,48,.04);border:1px solid var(--gold-bdr);
+  border-radius:7px;padding:8px 11px;font-size:13px;color:var(--text);
+  font-family:'Hanken Grotesk','Noto Sans TC',sans-serif;outline:none;transition:border .15s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold)}
+.field textarea{resize:vertical;min-height:74px}
+.field select option{background:#111}
+.field input[type=range]{padding:4px 0;accent-color:var(--gold);background:none;border:none;cursor:pointer}
+.prog-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);text-align:right}
+.m-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.btn-del{padding:7px 13px;background:rgba(200,72,64,.1);border:1px solid rgba(200,72,64,.22);border-radius:7px;color:var(--red);font-size:12.5px;cursor:pointer;font-family:inherit;margin-right:auto;transition:all .15s}
+.btn-del:hover{background:rgba(200,72,64,.2)}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:rgba(200,168,48,.15);border-radius:3px}
+
+/* utilities */
+.hidden{display:none!important}
+.text-gold{color:var(--gold)}
+
+/* animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pcard,.todo{animation:fadeIn .2s ease both}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="brand">
+    <div class="brand-seal">🦭</div>
+    <div>
+      <div class="brand-name">BIG LAZY SEALS</div>
+      <div class="brand-sub">Mission Control</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="sync-pill">
+      <div class="dot wait" id="dot"></div>
+      <span class="dot-lbl" id="dot-lbl">—</span>
+    </div>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="openProjModal()">＋ 專案</button>
+    <button type="button" class="btn btn-gold btn-sm" onclick="openTodoModal()">＋ 待辦</button>
+  </div>
+</header>
+
+<!-- STAT BAR -->
+<div class="statbar">
+  <div class="stat"><div><div class="stat-n" id="sn-proj">0</div><div class="stat-l">專案</div></div></div>
+  <div class="stat"><div><div class="stat-n" id="sn-crit">0</div><div class="stat-l">超重要</div></div></div>
+  <div class="stat"><div><div class="stat-n" id="sn-prog">0</div><div class="stat-l">進行中</div></div></div>
+  <div class="stat"><div><div class="stat-n" id="sn-todo">0</div><div class="stat-l">待辦事項</div></div></div>
+  <div class="stat"><div><div class="stat-n" id="sn-done">0</div><div class="stat-l">已完成</div></div></div>
+  <div class="stat"><div><div class="stat-n" id="sn-due">0</div><div class="stat-l">本週到期</div></div></div>
+</div>
+
+<!-- FIREBASE BANNER -->
+<div class="banner" id="banner">
+  <span>⚡</span>
+  <span><strong class="text-gold">本機模式</strong> — 資料僅存在此裝置。<a onclick="showHelp()">設定 Firebase</a> 讓兩人同步編輯。</span>
+  <span class="x" onclick="this.parentElement.classList.add('hidden')">×</span>
+</div>
+
+<!-- MAIN SPLIT -->
+<div class="split">
+
+  <!-- LEFT: PROJECTS -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-ttl"><span class="ic">📁</span>專案資料庫</div>
+      <button type="button" class="btn-icon" onclick="openProjModal()" title="新增專案">＋</button>
+    </div>
+    <div class="panel-body" id="proj-list"></div>
+  </div>
+
+  <!-- RIGHT: TODOS -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-ttl"><span class="ic">✓</span>待辦清單</div>
+      <button type="button" class="btn-icon" onclick="openTodoModal()" title="新增待辦">＋</button>
+    </div>
+    <div class="panel-body">
+      <div class="warn" id="prog-warn">
+        ⚠ 進行中已達 5 項上限 — 請先完成一項再繼續
+      </div>
+      <div id="todo-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PROJECT MODAL -->
+<div class="overlay" id="proj-overlay" onclick="bgClick(event,'proj-overlay')">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-title" id="pm-title">新增專案</div>
+      <button type="button" class="btn-x" onclick="closeModal('proj-overlay')">✕</button>
+    </div>
+    <div class="form">
+      <div class="field"><label class="lbl">專案名稱 *</label><input id="pm-name" type="text" placeholder="專案名稱…"/></div>
+      <div class="field"><label class="lbl">專案急迫性</label>
+        <select id="pm-urg" title="專案急迫性">
+          <option value="norm">普通</option>
+          <option value="crit">超重要</option>
+        </select>
+      </div>
+      <div class="frow">
+        <div class="field"><label class="lbl">開始日期</label><input id="pm-start" type="date" title="開始日期"/></div>
+        <div class="field"><label class="lbl">截止日期</label><input id="pm-end" type="date" title="截止日期"/></div>
+      </div>
+      <div class="field">
+        <label class="lbl">進度 — <span id="pm-pv">0%</span></label>
+        <input id="pm-prog" type="range" min="0" max="100" value="0" title="進度" oninput="document.getElementById('pm-pv').textContent=this.value+'%'"/>
+      </div>
+      <div class="field"><label class="lbl">備注</label><textarea id="pm-notes" placeholder="專案說明、目標、連結…"></textarea></div>
+    </div>
+    <div class="m-actions">
+      <button type="button" class="btn-del hidden" id="pm-del" onclick="deleteProj()">🗑 刪除</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('proj-overlay')">取消</button>
+      <button type="button" class="btn btn-gold btn-sm" onclick="saveProj()">儲存 ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- TODO MODAL -->
+<div class="overlay" id="todo-overlay" onclick="bgClick(event,'todo-overlay')">
+  <div class="modal">
+    <div class="m-hdr">
+      <div class="m-title" id="tm-title">新增待辦</div>
+      <button type="button" class="btn-x" onclick="closeModal('todo-overlay')">✕</button>
+    </div>
+    <div class="form">
+      <div class="field"><label class="lbl">待辦事項 *</label><input id="tm-name" type="text" placeholder="要做什麼？"/></div>
+      <div class="frow">
+        <div class="field"><label class="lbl">狀態</label>
+          <select id="tm-status" title="狀態">
+            <option value="尚未完成">尚未完成</option>
+            <option value="進行中">進行中</option>
+            <option value="完成">完成</option>
+          </select>
+        </div>
+        <div class="field"><label class="lbl">難易度</label>
+          <select id="tm-diff" title="難易度">
+            <option value="普通">普通</option>
+            <option value="困難">困難</option>
+            <option value="簡單">簡單</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field"><label class="lbl">估計時間</label>
+          <select id="tm-est" title="估計時間">
+            <option value="">—</option>
+            <option value="1hr">1hr</option>
+            <option value="2hr">2hr</option>
+            <option value="3hr">3hr</option>
+            <option value="半天">半天</option>
+          </select>
+        </div>
+        <div class="field"><label class="lbl">實際時間</label>
+          <select id="tm-act" title="實際時間">
+            <option value="">—</option>
+            <option value="1hr">1hr</option>
+            <option value="2hr">2hr</option>
+            <option value="3hr">3hr</option>
+            <option value="半天">半天</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="field"><label class="lbl">執行日期</label><input id="tm-date" type="date" title="執行日期"/></div>
+        <div class="field"><label class="lbl">關聯專案</label>
+          <select id="tm-proj" title="關聯專案"><option value="">— 無 —</option></select>
+        </div>
+      </div>
+      <div class="field"><label class="lbl">總結 / 備注</label><textarea id="tm-notes" placeholder="補充說明…"></textarea></div>
+    </div>
+    <div class="m-actions">
+      <button type="button" class="btn-del hidden" id="tm-del" onclick="deleteTodo()">🗑 刪除</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('todo-overlay')">取消</button>
+      <button type="button" class="btn btn-gold btn-sm" onclick="saveTodo()">儲存 ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ══════════════════════════════════════════
+//  🔥 貼上你的 Firebase 設定
+// ══════════════════════════════════════════
+const FB = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId:         "YOUR_PROJECT",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+// ══════════════════════════════════════════
+
+const USE_FB = FB.apiKey !== 'YOUR_API_KEY';
+let db = null;
+let projects = {};  // { id: {name, urgency, dateStart, dateEnd, progress, notes, createdAt} }
+let todos = {};     // { id: {name, status, difficulty, estTime, actTime, date, projectId, notes, createdAt} }
+let editProjId = null;
+let editTodoId = null;
+
+/* ── INIT ── */
+if (USE_FB) {
+  firebase.initializeApp(FB);
+  db = firebase.database();
+  setSS('wait');
+  db.ref('bls_proj').on('value', s => { projects = s.val()||{}; render(); setSS('live'); }, ()=>setSS('off'));
+  db.ref('bls_todo').on('value', s => { todos = s.val()||{}; render(); }, ()=>{});
+  db.ref('.info/connected').on('value', s => { if(!s.val()) setSS('off'); });
+} else {
+  try { projects = JSON.parse(localStorage.getItem('bls_proj')||'{}'); }catch(e){ projects={}; }
+  try { todos    = JSON.parse(localStorage.getItem('bls_todo')||'{}'); }catch(e){ todos={}; }
+  render(); setSS('loc');
+  document.getElementById('banner').style.display = 'flex';
+}
+
+function saveLocal() {
+  localStorage.setItem('bls_proj', JSON.stringify(projects));
+  localStorage.setItem('bls_todo', JSON.stringify(todos));
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ── SYNC STATUS ── */
+function setSS(s) {
+  const dot=document.getElementById('dot'), lbl=document.getElementById('dot-lbl');
+  dot.className='dot';
+  if(s==='live'){lbl.textContent='Live sync ✦'}
+  else if(s==='off'){dot.classList.add('off');lbl.textContent='離線'}
+  else if(s==='loc'){dot.classList.add('loc');lbl.textContent='本機模式'}
+  else{dot.classList.add('wait');lbl.textContent='連線中…'}
+}
+
+/* ── HELPERS ── */
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtDate(ds){
+  if(!ds) return '';
+  const d=new Date(ds+'T00:00:00');
+  return d.toLocaleDateString('zh-TW',{month:'short',day:'numeric'});
+}
+function dlDiff(ds){
+  if(!ds) return null;
+  const d=new Date(ds+'T00:00:00'),now=new Date();now.setHours(0,0,0,0);
+  return Math.ceil((d-now)/86400000);
+}
+function dlClass(ds){ const d=dlDiff(ds); if(d===null)return''; if(d<=3)return'urg'; if(d<=7)return'soon'; return'ok'; }
+function dlLabel(ds){
+  const d=dlDiff(ds); if(d===null)return'';
+  if(d<0) return`⚠ ${Math.abs(d)}d 逾期`;
+  if(d===0)return'⚡ 今天到期'; if(d===1)return'⏰ 明天到期';
+  if(d<=7)return`⏰ ${d}天後`;
+  return'📅 '+fmtDate(ds);
+}
+
+/* ── RENDER ── */
+function render() {
+  renderProjects();
+  renderTodos();
+  renderStats();
+}
+
+function renderStats() {
+  const projArr = Object.values(projects);
+  const todoArr = Object.values(todos);
+  const inProg  = todoArr.filter(t=>t.status==='進行中').length;
+  const done    = todoArr.filter(t=>t.status==='完成').length;
+  const crit    = projArr.filter(p=>p.urgency==='crit').length;
+  const dueWk   = todoArr.filter(t=>{
+    if(t.status==='完成'||!t.date)return false;
+    const d=dlDiff(t.date); return d!==null&&d>=0&&d<=7;
+  }).length;
+  document.getElementById('sn-proj').textContent = projArr.length;
+  document.getElementById('sn-crit').textContent = crit;
+  document.getElementById('sn-prog').textContent = inProg;
+  document.getElementById('sn-todo').textContent = todoArr.length;
+  document.getElementById('sn-done').textContent = done;
+  document.getElementById('sn-due').textContent  = dueWk;
+
+  // In-progress warning (max 5 like Notion)
+  document.getElementById('prog-warn').style.display = inProg>=5 ? 'flex':'none';
+}
+
+function renderProjects() {
+  const el = document.getElementById('proj-list');
+  const arr = Object.entries(projects).sort((a,b)=>{
+    const urgOrd = {crit:0,norm:1};
+    return (urgOrd[a[1].urgency]||1)-(urgOrd[b[1].urgency]||1) || (a[1].createdAt||0)-(b[1].createdAt||0);
+  });
+  if(!arr.length){
+    el.innerHTML='<div class="empty">還沒有專案。<br>點擊右上角 ＋ 新增第一個專案 ✦</div>';
+    return;
+  }
+  el.innerHTML = arr.map(([id,p])=>{
+    const pct = p.progress||0;
+    const relTodos = Object.values(todos).filter(t=>t.projectId===id);
+    const doneTodos = relTodos.filter(t=>t.status==='完成').length;
+    const urgCls = p.urgency==='crit'?'u-crit':'u-norm';
+    const urgTxt = p.urgency==='crit'?'超重要':'普通';
+    const cardCls = p.urgency==='crit'?'crit':'norm';
+    const dateRange = [p.dateStart,p.dateEnd].filter(Boolean).map(fmtDate).join(' → ') || '';
+    return `<div class="pcard ${cardCls}" onclick="openProjModal('${id}')">
+      <div class="pcard-top">
+        <div class="pcard-name">${esc(p.name)}</div>
+        <span class="urg-tag ${urgCls}">${urgTxt}</span>
+      </div>
+      ${dateRange?`<div class="pcard-dates">🗓 ${dateRange}</div>`:''}
+      ${p.notes?`<div class="pcard-notes">${esc(p.notes)}</div>`:''}
+      ${pct>0?`<div class="prog-row">
+        <div class="prog-label"><span class="prog-txt">進度</span><span class="prog-txt">${pct}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+      </div>`:''}
+      <div class="pcard-foot">
+        ${relTodos.length?`<span class="todo-cnt">${doneTodos}/${relTodos.length} 待辦完成</span>`:''}
+        ${p.dateEnd?`<span class="dl-tag ${dlClass(p.dateEnd)} todo-cnt">${dlLabel(p.dateEnd)}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTodos() {
+  const el = document.getElementById('todo-list');
+  const groups = { '進行中':[], '尚未完成':[], '完成':[] };
+  Object.entries(todos).forEach(([id,t])=>{
+    if(groups[t.status]) groups[t.status].push([id,t]);
+  });
+  // Sort each group
+  Object.values(groups).forEach(arr=>{
+    arr.sort((a,b)=>{
+      const da=a[1].date||'9999',db2=b[1].date||'9999';
+      return da.localeCompare(db2)||(a[1].createdAt||0)-(b[1].createdAt||0);
+    });
+  });
+
+  const order = ['進行中','尚未完成','完成'];
+  const icons = {'進行中':'🔥','尚未完成':'○','完成':'✅'};
+  const allItems = order.flatMap(s=>groups[s]);
+
+  if(!allItems.length){
+    el.innerHTML='<div class="empty">還沒有待辦事項。<br>點擊右上角 ＋ 新增 ✦</div>';
+    return;
+  }
+
+  let html='';
+  order.forEach(status=>{
+    const arr=groups[status];
+    if(!arr.length)return;
+    html+=`<div class="grp-hdr">${icons[status]} ${status}<div class="grp-line"></div><span class="grp-cnt">${arr.length}</span></div>`;
+    arr.forEach(([id,t])=>{
+      const proj = t.projectId&&projects[t.projectId];
+      const isDone = t.status==='完成';
+      const stCls = {完成:'st-done',進行中:'st-prog',尚未完成:'st-todo'}[t.status]||'st-todo';
+      const diffMap = {困難:'🔴',普通:'🟡',簡單:'🟢'};
+      const dc=dlClass(t.date), dl=dlLabel(t.date);
+      html+=`<div class="todo${isDone?' done-item':''}" onclick="openTodoModal('${id}')">
+        <div class="todo-check" onclick="event.stopPropagation();quickToggle('${id}')">${isDone?'✓':''}</div>
+        <div class="todo-main">
+          <div class="todo-name">${esc(t.name)}</div>
+          <div class="todo-meta">
+            <span class="st-badge ${stCls}">${t.status}</span>
+            ${t.difficulty?`<span class="diff-badge">${diffMap[t.difficulty]||''} ${t.difficulty}</span>`:''}
+            ${t.estTime?`<span class="time-tag">⏱ ${t.estTime}</span>`:''}
+            ${dl?`<span class="dl-tag ${dc}">${dl}</span>`:''}
+            ${proj?`<span class="proj-link">↳ ${esc(proj.name)}</span>`:''}
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+/* ── QUICK TOGGLE (check to done) ── */
+function quickToggle(id) {
+  const t = todos[id]; if(!t) return;
+  const next = t.status==='完成' ? '尚未完成' : '完成';
+  todos[id] = {...t, status:next, updatedAt:Date.now()};
+  if(USE_FB) db.ref('bls_todo/'+id).update({status:next,updatedAt:Date.now()});
+  else { saveLocal(); render(); }
+}
+
+/* ── PROJECT MODAL ── */
+function openProjModal(id) {
+  editProjId = id||null;
+  if(id&&projects[id]){
+    const p=projects[id];
+    document.getElementById('pm-title').textContent='編輯專案';
+    document.getElementById('pm-name').value  = p.name||'';
+    document.getElementById('pm-urg').value   = p.urgency||'norm';
+    document.getElementById('pm-start').value = p.dateStart||'';
+    document.getElementById('pm-end').value   = p.dateEnd||'';
+    document.getElementById('pm-prog').value  = p.progress||0;
+    document.getElementById('pm-pv').textContent=(p.progress||0)+'%';
+    document.getElementById('pm-notes').value = p.notes||'';
+    document.getElementById('pm-del').classList.remove('hidden');
+  } else {
+    document.getElementById('pm-title').textContent='新增專案';
+    document.getElementById('pm-name').value='';
+    document.getElementById('pm-urg').value='norm';
+    document.getElementById('pm-start').value='';
+    document.getElementById('pm-end').value='';
+    document.getElementById('pm-prog').value=0;
+    document.getElementById('pm-pv').textContent='0%';
+    document.getElementById('pm-notes').value='';
+    document.getElementById('pm-del').classList.add('hidden');
+  }
+  openOverlay('proj-overlay');
+}
+
+function saveProj(){
+  const name=document.getElementById('pm-name').value.trim();
+  if(!name){document.getElementById('pm-name').focus();return;}
+  const id = editProjId||uid();
+  const p = {
+    name,
+    urgency:  document.getElementById('pm-urg').value,
+    dateStart:document.getElementById('pm-start').value,
+    dateEnd:  document.getElementById('pm-end').value,
+    progress: Number(document.getElementById('pm-prog').value),
+    notes:    document.getElementById('pm-notes').value.trim(),
+    updatedAt:Date.now(),
+    createdAt:editProjId?(projects[editProjId]||{}).createdAt||Date.now():Date.now(),
+  };
+  if(USE_FB) db.ref('bls_proj/'+id).set(p);
+  else { projects[id]=p; saveLocal(); render(); }
+  closeModal('proj-overlay');
+}
+
+function deleteProj(){
+  if(!editProjId||!confirm('刪除此專案？相關待辦事項的關聯也會移除。'))return;
+  // Unlink todos
+  Object.entries(todos).forEach(([tid,t])=>{
+    if(t.projectId===editProjId){
+      todos[tid]={...t,projectId:''};
+      if(USE_FB) db.ref('bls_todo/'+tid).update({projectId:''});
+    }
+  });
+  if(USE_FB) db.ref('bls_proj/'+editProjId).remove();
+  else { delete projects[editProjId]; saveLocal(); render(); }
+  closeModal('proj-overlay');
+}
+
+/* ── TODO MODAL ── */
+function openTodoModal(id, defaultProjId) {
+  editTodoId = id||null;
+  // Populate project dropdown
+  const sel = document.getElementById('tm-proj');
+  sel.innerHTML='<option value="">— 無 —</option>';
+  Object.entries(projects).sort((a,b)=>a[1].name.localeCompare(b[1].name,'zh-TW')).forEach(([pid,p])=>{
+    sel.innerHTML+=`<option value="${pid}">${esc(p.name)}</option>`;
+  });
+  if(id&&todos[id]){
+    const t=todos[id];
+    document.getElementById('tm-title').textContent='編輯待辦';
+    document.getElementById('tm-name').value   = t.name||'';
+    document.getElementById('tm-status').value = t.status||'尚未完成';
+    document.getElementById('tm-diff').value   = t.difficulty||'普通';
+    document.getElementById('tm-est').value    = t.estTime||'';
+    document.getElementById('tm-act').value    = t.actTime||'';
+    document.getElementById('tm-date').value   = t.date||'';
+    document.getElementById('tm-proj').value   = t.projectId||'';
+    document.getElementById('tm-notes').value  = t.notes||'';
+    document.getElementById('tm-del').classList.remove('hidden');
+  } else {
+    document.getElementById('tm-title').textContent='新增待辦';
+    document.getElementById('tm-name').value='';
+    document.getElementById('tm-status').value='尚未完成';
+    document.getElementById('tm-diff').value='普通';
+    document.getElementById('tm-est').value='';
+    document.getElementById('tm-act').value='';
+    document.getElementById('tm-date').value='';
+    document.getElementById('tm-proj').value=defaultProjId||'';
+    document.getElementById('tm-notes').value='';
+    document.getElementById('tm-del').classList.add('hidden');
+  }
+  openOverlay('todo-overlay');
+}
+
+function saveTodo(){
+  const name=document.getElementById('tm-name').value.trim();
+  if(!name){document.getElementById('tm-name').focus();return;}
+  const status=document.getElementById('tm-status').value;
+  // Max 5 in-progress check
+  if(status==='進行中'&&!editTodoId){
+    const cur=Object.values(todos).filter(t=>t.status==='進行中').length;
+    if(cur>=5){alert('進行中已達 5 項上限！\n請先完成一項待辦事項再繼續。');return;}
+  }
+  const id=editTodoId||uid();
+  const t={
+    name,
+    status,
+    difficulty:document.getElementById('tm-diff').value,
+    estTime:   document.getElementById('tm-est').value,
+    actTime:   document.getElementById('tm-act').value,
+    date:      document.getElementById('tm-date').value,
+    projectId: document.getElementById('tm-proj').value,
+    notes:     document.getElementById('tm-notes').value.trim(),
+    updatedAt: Date.now(),
+    createdAt: editTodoId?(todos[editTodoId]||{}).createdAt||Date.now():Date.now(),
+  };
+  if(USE_FB) db.ref('bls_todo/'+id).set(t);
+  else { todos[id]=t; saveLocal(); render(); }
+  closeModal('todo-overlay');
+}
+
+function deleteTodo(){
+  if(!editTodoId||!confirm('刪除此待辦事項？'))return;
+  if(USE_FB) db.ref('bls_todo/'+editTodoId).remove();
+  else { delete todos[editTodoId]; saveLocal(); render(); }
+  closeModal('todo-overlay');
+}
+
+/* ── OVERLAY HELPERS ── */
+function openOverlay(id){
+  document.getElementById(id).classList.add('open');
+  setTimeout(()=>document.querySelector(`#${id} input`).focus(),80);
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); editProjId=editTodoId=null; }
+function bgClick(e,id){ if(e.target===document.getElementById(id)) closeModal(id); }
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeModal('proj-overlay');closeModal('todo-overlay');
+  }
+  if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){
+    if(document.getElementById('proj-overlay').classList.contains('open')) saveProj();
+    if(document.getElementById('todo-overlay').classList.contains('open')) saveTodo();
+  }
+});
+
+/* ── FIREBASE HELP ── */
+function showHelp(){
+  alert('🔥 Firebase 設定（約 5 分鐘，免費）\n\n'+
+    '1. 前往 console.firebase.google.com\n'+
+    '2. 建立新專案（如 "big-lazy-seals"）\n'+
+    '3. Realtime Database → 建立資料庫 → 測試模式\n'+
+    '4. 專案設定 → 你的應用程式 → 新增 Web 應用程式\n'+
+    '5. 複製 firebaseConfig 的值\n'+
+    '6. 貼到本檔案頂部的 const FB = { ... } 裡\n\n'+
+    '設定完成後，兩個人同時開啟頁面，編輯即時同步 ✦');
+}
+</script>
+</body>
+</html>
