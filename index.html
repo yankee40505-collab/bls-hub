@@ -9,36 +9,36 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --bg:       #080808;
-  --bg1:      #0f0f0f;
-  --bg2:      #141414;
-  --bg3:      #1a1a1a;
-  --gold:     #C8A830;
-  --gold-l:   #E2C050;
-  --gold-d:   #7A6420;
-  --gold-bg:  rgba(200,168,48,.08);
-  --gold-bdr: rgba(200,168,48,.20);
-  --text:     #EDE5CC;
-  --text-2:   #8A7D60;
-  --text-3:   #3E3830;
-  --urg:      #C84840;
-  --urg-bg:   rgba(200,72,64,.10);
-  --norm:     #C89828;
-  --norm-bg:  rgba(200,152,40,.10);
-  --done-c:   #3E9060;
-  --done-bg:  rgba(62,144,96,.10);
-  --prog-c:   #3878C8;
-  --prog-bg:  rgba(56,120,200,.10);
-  --todo-c:   #8A7D60;
-  --todo-bg:  rgba(138,125,96,.08);
-  --red:      #C84840;
+  --bg:       #0f0f0f;
+  --bg1:      #191919;
+  --bg2:      #222222;
+  --bg3:      #2c2c2c;
+  --gold:     #D4B030;
+  --gold-l:   #F0CC48;
+  --gold-d:   #8C7228;
+  --gold-bg:  rgba(212,176,48,.12);
+  --gold-bdr: rgba(212,176,48,.28);
+  --text:     #F4ECD8;
+  --text-2:   #A89870;
+  --text-3:   #585040;
+  --urg:      #E05048;
+  --urg-bg:   rgba(224,80,72,.12);
+  --norm:     #D4A828;
+  --norm-bg:  rgba(212,168,40,.12);
+  --done-c:   #48A870;
+  --done-bg:  rgba(72,168,112,.12);
+  --prog-c:   #5090D8;
+  --prog-bg:  rgba(80,144,216,.12);
+  --todo-c:   #A89870;
+  --todo-bg:  rgba(168,152,112,.10);
+  --red:      #E05048;
 }
 
 html{scroll-behavior:smooth}
 body{
   background:var(--bg);color:var(--text);
   font-family:'Hanken Grotesk','Noto Sans TC',sans-serif;
-  font-size:14px;line-height:1.6;min-height:100vh;
+  font-size:16px;line-height:1.65;min-height:100vh;
 }
 
 /* ───── HEADER ───── */
@@ -55,8 +55,8 @@ body{
   background:var(--gold-bg);border:1px solid var(--gold-d);
   display:flex;align-items:center;justify-content:center;font-size:20px;
 }
-.brand-name{font-size:17px;font-weight:700;letter-spacing:.04em;color:var(--gold-l)}
-.brand-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-2);letter-spacing:.14em;text-transform:uppercase;margin-top:1px}
+.brand-name{font-size:19px;font-weight:700;letter-spacing:.04em;color:var(--gold-l)}
+.brand-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2);letter-spacing:.14em;text-transform:uppercase;margin-top:1px}
 .hdr-r{display:flex;align-items:center;gap:12px}
 .sync-pill{
   display:flex;align-items:center;gap:6px;
@@ -82,8 +82,8 @@ body{
   white-space:nowrap;
 }
 .stat:last-child{border-right:none}
-.stat-n{font-size:18px;font-weight:700;color:var(--gold-l);line-height:1}
-.stat-l{font-size:10px;color:var(--text-2);letter-spacing:.05em;margin-top:1px}
+.stat-n{font-size:20px;font-weight:700;color:var(--gold-l);line-height:1}
+.stat-l{font-size:11px;color:var(--text-2);letter-spacing:.05em;margin-top:1px}
 
 /* ───── MAIN SPLIT ───── */
 .split{
@@ -106,7 +106,7 @@ body{
   position:sticky;top:58px;z-index:100;
   background:rgba(8,8,8,.96);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
 }
-.panel-ttl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+.panel-ttl{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
 .panel-ttl .ic{font-size:14px}
 .panel-body{padding:14px 22px 32px;display:flex;flex-direction:column;gap:10px}
 
@@ -151,7 +151,7 @@ body{
 .pcard.norm::before{background:var(--gold-d)}
 .pcard:hover{background:var(--bg2);border-color:var(--gold-bdr);transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.4)}
 .pcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px}
-.pcard-name{font-size:14px;font-weight:600;color:var(--text);line-height:1.35;flex:1}
+.pcard-name{font-size:15px;font-weight:600;color:var(--text);line-height:1.35;flex:1}
 .pcard-dates{
   font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2);
   margin-bottom:10px;display:flex;align-items:center;gap:5px;
@@ -182,7 +182,7 @@ body{
 .todo.done-item .todo-check{background:var(--done-c);border-color:var(--done-c);color:#fff}
 .todo-check:hover{border-color:var(--done-c)}
 .todo-main{flex:1;min-width:0}
-.todo-name{font-size:13.5px;font-weight:500;color:var(--text);line-height:1.38;margin-bottom:5px}
+.todo-name{font-size:15px;font-weight:500;color:var(--text);line-height:1.38;margin-bottom:5px}
 .todo.done-item .todo-name{text-decoration:line-through;color:var(--text-2)}
 .todo-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .st-badge{font-size:10px;padding:1.5px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
@@ -294,7 +294,7 @@ body{
 .cal-title{
   display:flex;align-items:baseline;gap:10px;
 }
-.cal-month{font-size:22px;font-weight:700;color:var(--text);letter-spacing:.02em}
+.cal-month{font-size:26px;font-weight:700;color:var(--text);letter-spacing:.02em}
 .cal-year{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-2)}
 .cal-nav{display:flex;align-items:center;gap:6px}
 .cal-grid{
@@ -330,7 +330,7 @@ body{
 .cal-dot.d-done{background:var(--done-c)}
 .cal-events{display:flex;flex-direction:column;gap:2px}
 .cal-ev{
-  font-size:10px;line-height:1.3;padding:2px 5px;border-radius:3px;
+  font-size:11px;line-height:1.3;padding:2px 5px;border-radius:3px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .cal-ev.ev-prog{background:var(--prog-bg);color:var(--prog-c)}
@@ -347,6 +347,19 @@ body{
 .leg-dot-done{background:var(--done-c)}
 .leg-dot-gold{background:var(--gold)}
 .leg-dot-urg{background:var(--urg)}
+/* date pick widget */
+.date-pick{display:flex;gap:6px}
+.date-pick .ds{flex:1;min-width:0}
+/* calendar add-day button */
+.cal-day-add{
+  position:absolute;bottom:5px;right:6px;
+  width:20px;height:20px;border-radius:50%;border:1px solid var(--gold-d);
+  background:none;color:var(--gold-d);font-size:14px;line-height:1;
+  cursor:pointer;display:none;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.cal-day:hover .cal-day-add{display:flex}
+.cal-day-add:hover{background:var(--gold);color:#000;border-color:var(--gold)}
 /* day popover */
 .day-pop{
   position:fixed;z-index:300;
@@ -365,6 +378,8 @@ body{
 }
 .day-pop-item:last-child{border-bottom:none}
 .day-pop-ic{font-size:11px;margin-top:1px;flex-shrink:0}
+.day-pop-est{opacity:.5;font-size:10px}
+.day-pop-add{float:right;background:var(--gold);color:#000;border:none;border-radius:5px;padding:2px 9px;font-size:11px;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -405,6 +420,29 @@ body{
   <span class="x" onclick="this.parentElement.classList.add('hidden')">×</span>
 </div>
 
+<!-- CALENDAR -->
+<div class="cal-section">
+  <div class="cal-hdr">
+    <div class="cal-title">
+      <span class="cal-month" id="cal-month">—</span>
+      <span class="cal-year" id="cal-year">—</span>
+    </div>
+    <div class="cal-nav">
+      <button type="button" class="btn-icon" id="cal-prev" title="上個月">‹</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="cal-today" onclick="calToday()">今天</button>
+      <button type="button" class="btn-icon" id="cal-next" title="下個月">›</button>
+    </div>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="cal-legend">
+    <div class="leg-item"><div class="leg-dot leg-dot-prog"></div>進行中</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-todo"></div>尚未完成</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-done"></div>已完成</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-gold"></div>專案截止</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-urg"></div>今天</div>
+  </div>
+</div>
+
 <!-- MAIN SPLIT -->
 <div class="split">
 
@@ -433,29 +471,6 @@ body{
 
 </div>
 
-<!-- CALENDAR -->
-<div class="cal-section">
-  <div class="cal-hdr">
-    <div class="cal-title">
-      <span class="cal-month" id="cal-month">—</span>
-      <span class="cal-year" id="cal-year">—</span>
-    </div>
-    <div class="cal-nav">
-      <button type="button" class="btn-icon" id="cal-prev" title="上個月">‹</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="cal-today" onclick="calToday()">今天</button>
-      <button type="button" class="btn-icon" id="cal-next" title="下個月">›</button>
-    </div>
-  </div>
-  <div class="cal-grid" id="cal-grid"></div>
-  <div class="cal-legend">
-    <div class="leg-item"><div class="leg-dot leg-dot-prog"></div>進行中</div>
-    <div class="leg-item"><div class="leg-dot leg-dot-todo"></div>尚未完成</div>
-    <div class="leg-item"><div class="leg-dot leg-dot-done"></div>已完成</div>
-    <div class="leg-item"><div class="leg-dot leg-dot-gold"></div>專案截止</div>
-    <div class="leg-item"><div class="leg-dot leg-dot-urg"></div>今天</div>
-  </div>
-</div>
-
 <!-- DAY POPOVER -->
 <div class="day-pop hidden" id="day-pop" onclick="event.stopPropagation()"></div>
 
@@ -474,7 +489,13 @@ body{
           <option value="crit">超重要</option>
         </select>
       </div>
-      <div class="field"><label class="lbl">截止日期</label><input id="pm-end" type="date" title="截止日期"/></div>
+      <div class="field"><label class="lbl">截止日期</label>
+        <div class="date-pick">
+          <select class="ds" id="pm-end-y" title="年份" onchange="updDays('pm-end')"></select>
+          <select class="ds" id="pm-end-m" title="月份" onchange="updDays('pm-end')"></select>
+          <select class="ds" id="pm-end-d" title="日期"></select>
+        </div>
+      </div>
       <div class="field">
         <label class="lbl">進度 — <span id="pm-pv">0%</span></label>
         <input id="pm-prog" type="range" min="0" max="100" value="0" title="進度" oninput="document.getElementById('pm-pv').textContent=this.value+'%'"/>
@@ -534,11 +555,15 @@ body{
           </select>
         </div>
       </div>
-      <div class="frow">
-        <div class="field"><label class="lbl">執行日期</label><input id="tm-date" type="date" title="執行日期"/></div>
-        <div class="field"><label class="lbl">關聯專案</label>
-          <select id="tm-proj" title="關聯專案"><option value="">— 無 —</option></select>
+      <div class="field"><label class="lbl">執行日期</label>
+        <div class="date-pick">
+          <select class="ds" id="tm-date-y" title="年份" onchange="updDays('tm-date')"></select>
+          <select class="ds" id="tm-date-m" title="月份" onchange="updDays('tm-date')"></select>
+          <select class="ds" id="tm-date-d" title="日期"></select>
         </div>
+      </div>
+      <div class="field"><label class="lbl">關聯專案</label>
+        <select id="tm-proj" title="關聯專案"><option value="">— 無 —</option></select>
       </div>
       <div class="field"><label class="lbl">總結 / 備注</label><textarea id="tm-notes" placeholder="補充說明…"></textarea></div>
     </div>
@@ -752,6 +777,44 @@ function quickToggle(id) {
   else { saveLocal(); render(); }
 }
 
+/* ── DATE SELECT HELPERS ── */
+function buildDateSel(prefix, dateStr) {
+  const now = new Date();
+  const curY = now.getFullYear();
+  const sy = document.getElementById(prefix+'-y');
+  const sm = document.getElementById(prefix+'-m');
+  sy.innerHTML = '<option value="">年</option>';
+  for(let y=curY-1;y<=curY+4;y++) sy.innerHTML+=`<option value="${y}">${y}年</option>`;
+  sm.innerHTML = '<option value="">月</option>';
+  for(let m=1;m<=12;m++) sm.innerHTML+=`<option value="${String(m).padStart(2,'0')}">${m}月</option>`;
+  if(dateStr&&/^\d{4}-\d{2}-\d{2}$/.test(dateStr)){
+    const [y,m,d]=dateStr.split('-');
+    sy.value=y; sm.value=m;
+    updDays(prefix);
+    document.getElementById(prefix+'-d').value=d;
+  } else {
+    updDays(prefix);
+  }
+}
+function updDays(prefix) {
+  const sy=document.getElementById(prefix+'-y');
+  const sm=document.getElementById(prefix+'-m');
+  const sd=document.getElementById(prefix+'-d');
+  const y=parseInt(sy.value)||new Date().getFullYear();
+  const m=parseInt(sm.value)||1;
+  const total=new Date(y,m,0).getDate();
+  const cur=sd.value;
+  sd.innerHTML='<option value="">日</option>';
+  for(let d=1;d<=total;d++) sd.innerHTML+=`<option value="${String(d).padStart(2,'0')}">${d}日</option>`;
+  if(cur) sd.value=cur;
+}
+function getDateSel(prefix) {
+  const y=document.getElementById(prefix+'-y').value;
+  const m=document.getElementById(prefix+'-m').value;
+  const d=document.getElementById(prefix+'-d').value;
+  return (y&&m&&d)?`${y}-${m}-${d}`:'';
+}
+
 /* ── PROJECT MODAL ── */
 function openProjModal(id) {
   editProjId = id||null;
@@ -760,7 +823,7 @@ function openProjModal(id) {
     document.getElementById('pm-title').textContent='編輯專案';
     document.getElementById('pm-name').value  = p.name||'';
     document.getElementById('pm-urg').value   = p.urgency||'norm';
-    document.getElementById('pm-end').value   = p.dateEnd||'';
+    buildDateSel('pm-end', p.dateEnd||'');
     document.getElementById('pm-prog').value  = p.progress||0;
     document.getElementById('pm-pv').textContent=(p.progress||0)+'%';
     document.getElementById('pm-notes').value = p.notes||'';
@@ -769,7 +832,7 @@ function openProjModal(id) {
     document.getElementById('pm-title').textContent='新增專案';
     document.getElementById('pm-name').value='';
     document.getElementById('pm-urg').value='norm';
-    document.getElementById('pm-end').value='';
+    buildDateSel('pm-end','');
     document.getElementById('pm-prog').value=0;
     document.getElementById('pm-pv').textContent='0%';
     document.getElementById('pm-notes').value='';
@@ -785,7 +848,7 @@ function saveProj(){
   const p = {
     name,
     urgency: document.getElementById('pm-urg').value,
-    dateEnd: document.getElementById('pm-end').value,
+    dateEnd: getDateSel('pm-end'),
     progress:Number(document.getElementById('pm-prog').value),
     notes:   document.getElementById('pm-notes').value.trim(),
     updatedAt:Date.now(),
@@ -811,9 +874,8 @@ function deleteProj(){
 }
 
 /* ── TODO MODAL ── */
-function openTodoModal(id, defaultProjId) {
+function openTodoModal(id, defaultProjId, defaultDate) {
   editTodoId = id||null;
-  // Populate project dropdown
   const sel = document.getElementById('tm-proj');
   sel.innerHTML='<option value="">— 無 —</option>';
   Object.entries(projects).sort((a,b)=>a[1].name.localeCompare(b[1].name,'zh-TW')).forEach(([pid,p])=>{
@@ -827,7 +889,7 @@ function openTodoModal(id, defaultProjId) {
     document.getElementById('tm-diff').value   = t.difficulty||'普通';
     document.getElementById('tm-est').value    = t.estTime||'';
     document.getElementById('tm-act').value    = t.actTime||'';
-    document.getElementById('tm-date').value   = t.date||'';
+    buildDateSel('tm-date', t.date||'');
     document.getElementById('tm-proj').value   = t.projectId||'';
     document.getElementById('tm-notes').value  = t.notes||'';
     document.getElementById('tm-del').classList.remove('hidden');
@@ -838,7 +900,7 @@ function openTodoModal(id, defaultProjId) {
     document.getElementById('tm-diff').value='普通';
     document.getElementById('tm-est').value='';
     document.getElementById('tm-act').value='';
-    document.getElementById('tm-date').value='';
+    buildDateSel('tm-date', defaultDate||'');
     document.getElementById('tm-proj').value=defaultProjId||'';
     document.getElementById('tm-notes').value='';
     document.getElementById('tm-del').classList.add('hidden');
@@ -850,7 +912,6 @@ function saveTodo(){
   const name=document.getElementById('tm-name').value.trim();
   if(!name){document.getElementById('tm-name').focus();return;}
   const status=document.getElementById('tm-status').value;
-  // Max 5 in-progress check
   if(status==='進行中'&&!editTodoId){
     const cur=Object.values(todos).filter(t=>t.status==='進行中').length;
     if(cur>=5){alert('進行中已達 5 項上限！\n請先完成一項待辦事項再繼續。');return;}
@@ -862,7 +923,7 @@ function saveTodo(){
     difficulty:document.getElementById('tm-diff').value,
     estTime:   document.getElementById('tm-est').value,
     actTime:   document.getElementById('tm-act').value,
-    date:      document.getElementById('tm-date').value,
+    date:      getDateSel('tm-date'),
     projectId: document.getElementById('tm-proj').value,
     notes:     document.getElementById('tm-notes').value.trim(),
     updatedAt: Date.now(),
@@ -971,15 +1032,16 @@ function renderCal(){
       return `<div class="cal-ev ${cls}">${esc(e.label)}</div>`;
     }).join('');
 
-    html+=`<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}"
-      ${hasEv?`onclick="showDayPop(event,'${ds}')"`:''}>
+    html+=`<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''} has-event"
+      onclick="calDayClick(event,'${ds}')">
       <div class="cal-dn">${d}</div>
       ${dots?`<div class="cal-dots">${dots}</div>`:''}
       <div class="cal-events">${evLabels}</div>
+      <button type="button" class="cal-day-add" onclick="event.stopPropagation();openTodoModal(null,null,'${ds}')" title="新增待辦">＋</button>
     </div>`;
   }
 
-  // Next month padding to complete grid
+  // Next month padding
   const totalCells = Math.ceil((firstDay+daysInMonth)/7)*7;
   const trailing = totalCells-(firstDay+daysInMonth);
   for(let d=1;d<=trailing;d++){
@@ -989,28 +1051,36 @@ function renderCal(){
   document.getElementById('cal-grid').innerHTML = html;
 }
 
-function showDayPop(e, ds){
-  const pop = document.getElementById('day-pop');
+function calDayClick(e, ds){
   const evs = [];
   Object.values(todos).forEach(t=>{ if(t.date===ds) evs.push({type:'todo',label:t.name,status:t.status,est:t.estTime}); });
   Object.values(projects).forEach(p=>{ if(p.dateEnd===ds) evs.push({type:'proj',label:p.name,status:'deadline'}); });
-  if(!evs.length){pop.classList.add('hidden');return;}
 
-  const d=new Date(ds+'T00:00:00');
-  const title=d.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
+  if(!evs.length){
+    // Empty day: directly open new todo modal with that date pre-filled
+    openTodoModal(null,null,ds);
+    return;
+  }
+
+  // Day has events: show popover
+  const pop = document.getElementById('day-pop');
+  const dt=new Date(ds+'T00:00:00');
+  const title=dt.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
   const statusIcon={完成:'✅',進行中:'🔥',尚未完成:'○',deadline:'📁'};
 
-  pop.innerHTML=`<div class="day-pop-title">${title}</div>`+
+  pop.innerHTML=`<div class="day-pop-title">${title}
+    <button type="button" class="day-pop-add" onclick="event.stopPropagation();document.getElementById('day-pop').classList.add('hidden');openTodoModal(null,null,'${ds}')">＋ 新增</button>
+  </div>`+
     evs.map(ev=>`<div class="day-pop-item">
       <span class="day-pop-ic">${statusIcon[ev.status]||'•'}</span>
-      <span>${esc(ev.label)}${ev.est?` <span style="opacity:.5;font-size:10px">${ev.est}</span>`:''}</span>
+      <span>${esc(ev.label)}${ev.est?` <span class="day-pop-est">${ev.est}</span>`:''}</span>
     </div>`).join('');
 
   pop.classList.remove('hidden');
   const rect=e.currentTarget.getBoundingClientRect();
   let top=rect.bottom+6, left=rect.left;
-  if(left+260>window.innerWidth) left=window.innerWidth-268;
-  if(top+200>window.innerHeight) top=rect.top-210;
+  if(left+270>window.innerWidth) left=window.innerWidth-278;
+  if(top+220>window.innerHeight) top=rect.top-220;
   pop.style.top=top+'px'; pop.style.left=left+'px';
   e.stopPropagation();
 }
