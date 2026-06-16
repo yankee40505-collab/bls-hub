@@ -280,6 +280,91 @@ body{
 /* animations */
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .pcard,.todo{animation:fadeIn .2s ease both}
+
+/* ───── CALENDAR ───── */
+.cal-section{
+  border-top:1px solid rgba(200,168,48,.10);
+  padding:28px 28px 48px;
+  background:linear-gradient(180deg,rgba(200,168,48,.02) 0%,transparent 100%);
+}
+.cal-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:22px;
+}
+.cal-title{
+  display:flex;align-items:baseline;gap:10px;
+}
+.cal-month{font-size:22px;font-weight:700;color:var(--text);letter-spacing:.02em}
+.cal-year{font-family:'DM Mono',monospace;font-size:14px;color:var(--text-2)}
+.cal-nav{display:flex;align-items:center;gap:6px}
+.cal-grid{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:3px;
+}
+.cal-dow{
+  text-align:center;font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);
+  padding:6px 0;
+}
+.cal-day{
+  min-height:72px;border-radius:8px;padding:7px 8px;
+  background:var(--bg1);border:1px solid rgba(200,168,48,.06);
+  cursor:default;position:relative;transition:border-color .15s;
+}
+.cal-day.has-event{cursor:pointer}
+.cal-day.has-event:hover{border-color:var(--gold-bdr);background:var(--bg2)}
+.cal-day.today{
+  border-color:var(--gold-d)!important;
+  background:var(--gold-bg)!important;
+}
+.cal-day.other-month{opacity:.3}
+.cal-day.other-month .cal-dn{color:var(--text-3)}
+.cal-dn{
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
+  color:var(--text-2);line-height:1;margin-bottom:5px;
+}
+.cal-day.today .cal-dn{color:var(--gold-l);font-weight:700}
+.cal-dots{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px}
+.cal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cal-dot.d-prog{background:var(--prog-c)}
+.cal-dot.d-todo{background:var(--text-3)}
+.cal-dot.d-done{background:var(--done-c)}
+.cal-events{display:flex;flex-direction:column;gap:2px}
+.cal-ev{
+  font-size:10px;line-height:1.3;padding:2px 5px;border-radius:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.cal-ev.ev-prog{background:var(--prog-bg);color:var(--prog-c)}
+.cal-ev.ev-todo{background:var(--todo-bg);color:var(--todo-c)}
+.cal-ev.ev-done{background:var(--done-bg);color:var(--done-c)}
+.cal-ev.ev-proj{background:var(--gold-bg);color:var(--gold);border-left:2px solid var(--gold-d)}
+.cal-legend{
+  display:flex;align-items:center;gap:18px;margin-top:16px;flex-wrap:wrap;
+}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.leg-dot-prog{background:var(--prog-c)}
+.leg-dot-todo{background:var(--todo-c)}
+.leg-dot-done{background:var(--done-c)}
+.leg-dot-gold{background:var(--gold)}
+.leg-dot-urg{background:var(--urg)}
+/* day popover */
+.day-pop{
+  position:fixed;z-index:300;
+  background:var(--bg2);border:1px solid var(--gold-bdr);
+  border-radius:10px;padding:14px;min-width:200px;max-width:260px;
+  box-shadow:0 12px 40px rgba(0,0,0,.7);
+  animation:fadeIn .12s ease both;
+}
+.day-pop-title{
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);
+  margin-bottom:10px;letter-spacing:.05em;
+}
+.day-pop-item{
+  display:flex;align-items:flex-start;gap:7px;
+  padding:6px 0;border-bottom:1px solid rgba(200,168,48,.07);font-size:12px;
+}
+.day-pop-item:last-child{border-bottom:none}
+.day-pop-ic{font-size:11px;margin-top:1px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -348,6 +433,32 @@ body{
 
 </div>
 
+<!-- CALENDAR -->
+<div class="cal-section">
+  <div class="cal-hdr">
+    <div class="cal-title">
+      <span class="cal-month" id="cal-month">—</span>
+      <span class="cal-year" id="cal-year">—</span>
+    </div>
+    <div class="cal-nav">
+      <button type="button" class="btn-icon" id="cal-prev" title="上個月">‹</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="cal-today" onclick="calToday()">今天</button>
+      <button type="button" class="btn-icon" id="cal-next" title="下個月">›</button>
+    </div>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="cal-legend">
+    <div class="leg-item"><div class="leg-dot leg-dot-prog"></div>進行中</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-todo"></div>尚未完成</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-done"></div>已完成</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-gold"></div>專案截止</div>
+    <div class="leg-item"><div class="leg-dot leg-dot-urg"></div>今天</div>
+  </div>
+</div>
+
+<!-- DAY POPOVER -->
+<div class="day-pop hidden" id="day-pop" onclick="event.stopPropagation()"></div>
+
 <!-- PROJECT MODAL -->
 <div class="overlay" id="proj-overlay" onclick="bgClick(event,'proj-overlay')">
   <div class="modal">
@@ -363,10 +474,7 @@ body{
           <option value="crit">超重要</option>
         </select>
       </div>
-      <div class="frow">
-        <div class="field"><label class="lbl">開始日期</label><input id="pm-start" type="date" title="開始日期"/></div>
-        <div class="field"><label class="lbl">截止日期</label><input id="pm-end" type="date" title="截止日期"/></div>
-      </div>
+      <div class="field"><label class="lbl">截止日期</label><input id="pm-end" type="date" title="截止日期"/></div>
       <div class="field">
         <label class="lbl">進度 — <span id="pm-pv">0%</span></label>
         <input id="pm-prog" type="range" min="0" max="100" value="0" title="進度" oninput="document.getElementById('pm-pv').textContent=this.value+'%'"/>
@@ -564,13 +672,12 @@ function renderProjects() {
     const urgCls = p.urgency==='crit'?'u-crit':'u-norm';
     const urgTxt = p.urgency==='crit'?'超重要':'普通';
     const cardCls = p.urgency==='crit'?'crit':'norm';
-    const dateRange = [p.dateStart,p.dateEnd].filter(Boolean).map(fmtDate).join(' → ') || '';
     return `<div class="pcard ${cardCls}" onclick="openProjModal('${id}')">
       <div class="pcard-top">
         <div class="pcard-name">${esc(p.name)}</div>
         <span class="urg-tag ${urgCls}">${urgTxt}</span>
       </div>
-      ${dateRange?`<div class="pcard-dates">🗓 ${dateRange}</div>`:''}
+      ${p.dateEnd?`<div class="pcard-dates">🗓 截止 ${fmtDate(p.dateEnd)}</div>`:''}
       ${p.notes?`<div class="pcard-notes">${esc(p.notes)}</div>`:''}
       ${pct>0?`<div class="prog-row">
         <div class="prog-label"><span class="prog-txt">進度</span><span class="prog-txt">${pct}%</span></div>
@@ -653,7 +760,6 @@ function openProjModal(id) {
     document.getElementById('pm-title').textContent='編輯專案';
     document.getElementById('pm-name').value  = p.name||'';
     document.getElementById('pm-urg').value   = p.urgency||'norm';
-    document.getElementById('pm-start').value = p.dateStart||'';
     document.getElementById('pm-end').value   = p.dateEnd||'';
     document.getElementById('pm-prog').value  = p.progress||0;
     document.getElementById('pm-pv').textContent=(p.progress||0)+'%';
@@ -663,7 +769,6 @@ function openProjModal(id) {
     document.getElementById('pm-title').textContent='新增專案';
     document.getElementById('pm-name').value='';
     document.getElementById('pm-urg').value='norm';
-    document.getElementById('pm-start').value='';
     document.getElementById('pm-end').value='';
     document.getElementById('pm-prog').value=0;
     document.getElementById('pm-pv').textContent='0%';
@@ -679,11 +784,10 @@ function saveProj(){
   const id = editProjId||uid();
   const p = {
     name,
-    urgency:  document.getElementById('pm-urg').value,
-    dateStart:document.getElementById('pm-start').value,
-    dateEnd:  document.getElementById('pm-end').value,
-    progress: Number(document.getElementById('pm-prog').value),
-    notes:    document.getElementById('pm-notes').value.trim(),
+    urgency: document.getElementById('pm-urg').value,
+    dateEnd: document.getElementById('pm-end').value,
+    progress:Number(document.getElementById('pm-prog').value),
+    notes:   document.getElementById('pm-notes').value.trim(),
     updatedAt:Date.now(),
     createdAt:editProjId?(projects[editProjId]||{}).createdAt||Date.now():Date.now(),
   };
@@ -806,6 +910,116 @@ function showHelp(){
     '6. 貼到本檔案頂部的 const FB = { ... } 裡\n\n'+
     '設定完成後，兩個人同時開啟頁面，編輯即時同步 ✦');
 }
+
+/* ── CALENDAR ── */
+let calYear, calMonth;
+(function initCal(){
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  document.getElementById('cal-prev').onclick = ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); };
+  document.getElementById('cal-next').onclick = ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); };
+  renderCal();
+})();
+
+function calToday(){ const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); renderCal(); }
+
+function renderCal(){
+  const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const DAYS=['日','一','二','三','四','五','六'];
+  document.getElementById('cal-month').textContent = MONTHS[calMonth];
+  document.getElementById('cal-year').textContent  = calYear;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+
+  // Build lookup: dateStr → [{type, label, status}]
+  const evMap = {};
+  const addEv = (ds, ev) => { if(!ds)return; if(!evMap[ds])evMap[ds]=[]; evMap[ds].push(ev); };
+
+  Object.values(todos).forEach(t=>{
+    if(t.date) addEv(t.date, {type:'todo', label:t.name, status:t.status});
+  });
+  Object.values(projects).forEach(p=>{
+    if(p.dateEnd) addEv(p.dateEnd, {type:'proj', label:p.name, status:'deadline'});
+  });
+
+  let html = DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  // Prev month padding
+  for(let i=firstDay-1;i>=0;i--){
+    const d=daysInPrev-i;
+    html+=`<div class="cal-day other-month"><div class="cal-dn">${d}</div></div>`;
+  }
+
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs = evMap[ds]||[];
+    const dt=new Date(calYear,calMonth,d);
+    const isToday = dt.getTime()===today.getTime();
+    const hasEv = evs.length>0;
+
+    const dots = evs.slice(0,6).map(e=>{
+      const dc = e.type==='proj'?'d-done': e.status==='進行中'?'d-prog':e.status==='完成'?'d-done':'d-todo';
+      return `<div class="cal-dot ${dc}"></div>`;
+    }).join('');
+
+    const evLabels = evs.slice(0,2).map(e=>{
+      const cls = e.type==='proj'?'ev-proj':e.status==='進行中'?'ev-prog':e.status==='完成'?'ev-done':'ev-todo';
+      return `<div class="cal-ev ${cls}">${esc(e.label)}</div>`;
+    }).join('');
+
+    html+=`<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}"
+      ${hasEv?`onclick="showDayPop(event,'${ds}')"`:''}>
+      <div class="cal-dn">${d}</div>
+      ${dots?`<div class="cal-dots">${dots}</div>`:''}
+      <div class="cal-events">${evLabels}</div>
+    </div>`;
+  }
+
+  // Next month padding to complete grid
+  const totalCells = Math.ceil((firstDay+daysInMonth)/7)*7;
+  const trailing = totalCells-(firstDay+daysInMonth);
+  for(let d=1;d<=trailing;d++){
+    html+=`<div class="cal-day other-month"><div class="cal-dn">${d}</div></div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function showDayPop(e, ds){
+  const pop = document.getElementById('day-pop');
+  const evs = [];
+  Object.values(todos).forEach(t=>{ if(t.date===ds) evs.push({type:'todo',label:t.name,status:t.status,est:t.estTime}); });
+  Object.values(projects).forEach(p=>{ if(p.dateEnd===ds) evs.push({type:'proj',label:p.name,status:'deadline'}); });
+  if(!evs.length){pop.classList.add('hidden');return;}
+
+  const d=new Date(ds+'T00:00:00');
+  const title=d.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
+  const statusIcon={完成:'✅',進行中:'🔥',尚未完成:'○',deadline:'📁'};
+
+  pop.innerHTML=`<div class="day-pop-title">${title}</div>`+
+    evs.map(ev=>`<div class="day-pop-item">
+      <span class="day-pop-ic">${statusIcon[ev.status]||'•'}</span>
+      <span>${esc(ev.label)}${ev.est?` <span style="opacity:.5;font-size:10px">${ev.est}</span>`:''}</span>
+    </div>`).join('');
+
+  pop.classList.remove('hidden');
+  const rect=e.currentTarget.getBoundingClientRect();
+  let top=rect.bottom+6, left=rect.left;
+  if(left+260>window.innerWidth) left=window.innerWidth-268;
+  if(top+200>window.innerHeight) top=rect.top-210;
+  pop.style.top=top+'px'; pop.style.left=left+'px';
+  e.stopPropagation();
+}
+
+document.addEventListener('click',()=>{ document.getElementById('day-pop').classList.add('hidden'); });
+
+// Re-render calendar whenever data changes
+const _origRender = render;
+render = function(){ _origRender(); renderCal(); };
 </script>
 </body>
 </html>
