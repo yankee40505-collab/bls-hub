@@ -166,11 +166,6 @@ body{
   margin-bottom:10px;display:flex;align-items:center;gap:5px;
 }
 .pcard-notes{font-size:12.5px;color:var(--text-2);line-height:1.65;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.prog-row{margin-bottom:9px}
-.prog-label{display:flex;justify-content:space-between;margin-bottom:4px}
-.prog-txt{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2)}
-.prog-bar{height:3px;background:rgba(200,168,48,.1);border-radius:2px;overflow:hidden}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold));border-radius:2px;transition:width .4s}
 .pcard-foot{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .todo-cnt{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text-2)}
 
@@ -200,7 +195,6 @@ body{
 .st-todo{background:var(--todo-bg);color:var(--todo-c);border:1px solid rgba(138,125,96,.18)}
 .diff-badge{font-family:'DM Mono',monospace;font-size:9.5px;padding:1.5px 6px;border-radius:3px;color:var(--text-2);background:var(--bg3);border:1px solid var(--bg3)}
 .proj-link{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--gold-d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
-.time-tag{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--text-2)}
 .dl-tag{font-family:'DM Mono',monospace;font-size:9.5px}
 .dl-tag.urg{color:var(--red)}.dl-tag.soon{color:var(--norm)}.dl-tag.ok{color:var(--done-c)}
 
@@ -271,7 +265,7 @@ body{
   font-family:'Hanken Grotesk','Noto Sans TC',sans-serif;outline:none;transition:border .15s;
 }
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold)}
-.field textarea{resize:vertical;min-height:74px}
+.field textarea{resize:vertical;min-height:160px}
 .field select option{background:#111}
 .field input[type=range]{padding:4px 0;accent-color:var(--gold);background:none;border:none;cursor:pointer}
 .prog-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);text-align:right}
@@ -387,7 +381,6 @@ body{
 }
 .day-pop-item:last-child{border-bottom:none}
 .day-pop-ic{font-size:11px;margin-top:1px;flex-shrink:0}
-.day-pop-est{opacity:.5;font-size:10px}
 .day-pop-add{float:right;background:var(--gold);color:#000;border:none;border-radius:5px;padding:2px 9px;font-size:11px;cursor:pointer;font-family:inherit}
 </style>
 </head>
@@ -505,10 +498,6 @@ body{
           <select class="ds" id="pm-end-d" title="日期"></select>
         </div>
       </div>
-      <div class="field">
-        <label class="lbl">進度 — <span id="pm-pv">0%</span></label>
-        <input id="pm-prog" type="range" min="0" max="100" value="0" title="進度" oninput="document.getElementById('pm-pv').textContent=this.value+'%'"/>
-      </div>
       <div class="field"><label class="lbl">備注</label><textarea id="pm-notes" placeholder="專案說明、目標、連結…"></textarea></div>
     </div>
     <div class="m-actions">
@@ -541,26 +530,6 @@ body{
             <option value="普通">普通</option>
             <option value="困難">困難</option>
             <option value="簡單">簡單</option>
-          </select>
-        </div>
-      </div>
-      <div class="frow">
-        <div class="field"><label class="lbl">估計時間</label>
-          <select id="tm-est" title="估計時間">
-            <option value="">—</option>
-            <option value="1hr">1hr</option>
-            <option value="2hr">2hr</option>
-            <option value="3hr">3hr</option>
-            <option value="半天">半天</option>
-          </select>
-        </div>
-        <div class="field"><label class="lbl">實際時間</label>
-          <select id="tm-act" title="實際時間">
-            <option value="">—</option>
-            <option value="1hr">1hr</option>
-            <option value="2hr">2hr</option>
-            <option value="3hr">3hr</option>
-            <option value="半天">半天</option>
           </select>
         </div>
       </div>
@@ -605,8 +574,8 @@ const FB = {
 
 const USE_FB = FB.apiKey !== 'YOUR_API_KEY';
 let db = null;
-let projects = {};  // { id: {name, urgency, dateStart, dateEnd, progress, notes, createdAt} }
-let todos = {};     // { id: {name, status, difficulty, estTime, actTime, date, projectId, notes, createdAt} }
+let projects = {};  // { id: {name, urgency, dateStart, dateEnd, notes, createdAt} }
+let todos = {};     // { id: {name, status, difficulty, date, projectId, notes, createdAt} }
 let editProjId = null;
 let editTodoId = null;
 
@@ -701,7 +670,6 @@ function renderProjects() {
     return;
   }
   el.innerHTML = arr.map(([id,p])=>{
-    const pct = p.progress||0;
     const relTodos = Object.values(todos).filter(t=>t.projectId===id);
     const doneTodos = relTodos.filter(t=>t.status==='完成').length;
     const urgCls = p.urgency==='crit'?'u-crit':'u-norm';
@@ -714,10 +682,6 @@ function renderProjects() {
       </div>
       ${p.dateEnd?`<div class="pcard-dates">🗓 截止 ${fmtDate(p.dateEnd)}</div>`:''}
       ${p.notes?`<div class="pcard-notes">${esc(p.notes)}</div>`:''}
-      ${pct>0?`<div class="prog-row">
-        <div class="prog-label"><span class="prog-txt">進度</span><span class="prog-txt">${pct}%</span></div>
-        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
-      </div>`:''}
       <div class="pcard-foot">
         ${relTodos.length?`<span class="todo-cnt">${doneTodos}/${relTodos.length} 待辦完成</span>`:''}
         ${p.dateEnd?`<span class="dl-tag ${dlClass(p.dateEnd)} todo-cnt">${dlLabel(p.dateEnd)}</span>`:''}
@@ -767,7 +731,6 @@ function renderTodos() {
           <div class="todo-meta">
             <span class="st-badge ${stCls}">${t.status}</span>
             ${t.difficulty?`<span class="diff-badge">${diffMap[t.difficulty]||''} ${t.difficulty}</span>`:''}
-            ${t.estTime?`<span class="time-tag">⏱ ${t.estTime}</span>`:''}
             ${dl?`<span class="dl-tag ${dc}">${dl}</span>`:''}
             ${proj?`<span class="proj-link">↳ ${esc(proj.name)}</span>`:''}
           </div>
@@ -834,8 +797,6 @@ function openProjModal(id) {
     document.getElementById('pm-name').value  = p.name||'';
     document.getElementById('pm-urg').value   = p.urgency||'norm';
     buildDateSel('pm-end', p.dateEnd||'');
-    document.getElementById('pm-prog').value  = p.progress||0;
-    document.getElementById('pm-pv').textContent=(p.progress||0)+'%';
     document.getElementById('pm-notes').value = p.notes||'';
     document.getElementById('pm-del').classList.remove('hidden');
   } else {
@@ -843,8 +804,6 @@ function openProjModal(id) {
     document.getElementById('pm-name').value='';
     document.getElementById('pm-urg').value='norm';
     buildDateSel('pm-end','');
-    document.getElementById('pm-prog').value=0;
-    document.getElementById('pm-pv').textContent='0%';
     document.getElementById('pm-notes').value='';
     document.getElementById('pm-del').classList.add('hidden');
   }
@@ -859,7 +818,6 @@ function saveProj(){
     name,
     urgency: document.getElementById('pm-urg').value,
     dateEnd: getDateSel('pm-end'),
-    progress:Number(document.getElementById('pm-prog').value),
     notes:   document.getElementById('pm-notes').value.trim(),
     updatedAt:Date.now(),
     createdAt:editProjId?(projects[editProjId]||{}).createdAt||Date.now():Date.now(),
@@ -897,8 +855,6 @@ function openTodoModal(id, defaultProjId, defaultDate) {
     document.getElementById('tm-name').value   = t.name||'';
     document.getElementById('tm-status').value = t.status||'尚未完成';
     document.getElementById('tm-diff').value   = t.difficulty||'普通';
-    document.getElementById('tm-est').value    = t.estTime||'';
-    document.getElementById('tm-act').value    = t.actTime||'';
     buildDateSel('tm-date', t.date||'');
     document.getElementById('tm-proj').value   = t.projectId||'';
     document.getElementById('tm-notes').value  = t.notes||'';
@@ -908,8 +864,6 @@ function openTodoModal(id, defaultProjId, defaultDate) {
     document.getElementById('tm-name').value='';
     document.getElementById('tm-status').value='尚未完成';
     document.getElementById('tm-diff').value='普通';
-    document.getElementById('tm-est').value='';
-    document.getElementById('tm-act').value='';
     buildDateSel('tm-date', defaultDate||'');
     document.getElementById('tm-proj').value=defaultProjId||'';
     document.getElementById('tm-notes').value='';
@@ -931,8 +885,6 @@ function saveTodo(){
     name,
     status,
     difficulty:document.getElementById('tm-diff').value,
-    estTime:   document.getElementById('tm-est').value,
-    actTime:   document.getElementById('tm-act').value,
     date:      getDateSel('tm-date'),
     projectId: document.getElementById('tm-proj').value,
     notes:     document.getElementById('tm-notes').value.trim(),
@@ -1063,7 +1015,7 @@ function renderCal(){
 
 function calDayClick(e, ds){
   const evs = [];
-  Object.values(todos).forEach(t=>{ if(t.date===ds) evs.push({type:'todo',label:t.name,status:t.status,est:t.estTime}); });
+  Object.values(todos).forEach(t=>{ if(t.date===ds) evs.push({type:'todo',label:t.name,status:t.status}); });
   Object.values(projects).forEach(p=>{ if(p.dateEnd===ds) evs.push({type:'proj',label:p.name,status:'deadline'}); });
 
   if(!evs.length){
@@ -1083,7 +1035,7 @@ function calDayClick(e, ds){
   </div>`+
     evs.map(ev=>`<div class="day-pop-item">
       <span class="day-pop-ic">${statusIcon[ev.status]||'•'}</span>
-      <span>${esc(ev.label)}${ev.est?` <span class="day-pop-est">${ev.est}</span>`:''}</span>
+      <span>${esc(ev.label)}</span>
     </div>`).join('');
 
   pop.classList.remove('hidden');
