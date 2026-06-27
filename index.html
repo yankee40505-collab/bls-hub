@@ -423,6 +423,45 @@ body{
 .day-pop-ic{font-size:11px;margin-top:1px;flex-shrink:0}
 .day-pop-add{float:right;background:var(--gold);color:#000;border:none;border-radius:5px;padding:2px 9px;font-size:11px;cursor:pointer;font-family:inherit}
 
+/* ── MONTH FLIP EDGE ZONES ── */
+.cal-edge{
+  position:absolute;top:0;bottom:0;width:64px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;pointer-events:none;opacity:0;
+  transition:opacity .2s;z-index:10;
+  border-radius:10px;
+}
+.cal-edge.left{ left:0;
+  background:linear-gradient(90deg,rgba(212,176,48,.18) 0%,transparent 100%);
+}
+.cal-edge.right{ right:0;
+  background:linear-gradient(270deg,rgba(212,176,48,.18) 0%,transparent 100%);
+}
+.cal-edge.active{ opacity:1; pointer-events:none; }
+.cal-edge-arrow{
+  font-size:22px;color:var(--gold-l);
+  animation:edgePulse 0.7s ease-in-out infinite alternate;
+}
+.cal-edge-lbl{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--gold);letter-spacing:.08em;text-transform:uppercase;
+}
+@keyframes edgePulse{from{opacity:.5;transform:scale(.9)}to{opacity:1;transform:scale(1.1)}}
+
+/* flip indicator bar that fills like a countdown */
+.cal-edge-bar{
+  width:3px;height:36px;background:rgba(212,176,48,.2);
+  border-radius:2px;overflow:hidden;position:relative;
+}
+.cal-edge-fill{
+  position:absolute;bottom:0;left:0;right:0;
+  background:var(--gold);border-radius:2px;
+  height:0%;transition:height linear;
+}
+
+/* .cal-section needs position:relative for edge zones */
+.cal-section{ position:relative; }
+
 /* reschedule toast */
 @keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes toastOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(6px)}}
@@ -483,7 +522,20 @@ body{
 </div>
 
 <!-- CALENDAR -->
-<div class="cal-section">
+<div class="cal-section" id="cal-section">
+
+  <!-- Month-flip edge zones (visible only during drag) -->
+  <div class="cal-edge left" id="edge-prev">
+    <div class="cal-edge-arrow">‹</div>
+    <div class="cal-edge-bar"><div class="cal-edge-fill" id="edge-prev-fill"></div></div>
+    <div class="cal-edge-lbl">上個月</div>
+  </div>
+  <div class="cal-edge right" id="edge-next">
+    <div class="cal-edge-arrow">›</div>
+    <div class="cal-edge-bar"><div class="cal-edge-fill" id="edge-next-fill"></div></div>
+    <div class="cal-edge-lbl">下個月</div>
+  </div>
+
   <div class="cal-hdr">
     <div class="cal-title">
       <span class="cal-month" id="cal-month">—</span>
@@ -1091,6 +1143,49 @@ function renderCal(){
 }
 
 /* ── DRAG & DROP ── */
+
+// Edge-zone flip state
+let edgeFlipTimer   = null;   // rAF loop id
+let edgeFlipStart   = null;   // timestamp when hovering started
+const EDGE_DELAY_MS = 900;    // ms to hold before flipping
+
+function clearEdgeFlip(){
+  if(edgeFlipTimer){ cancelAnimationFrame(edgeFlipTimer); edgeFlipTimer=null; }
+  edgeFlipStart = null;
+  document.getElementById('edge-prev').classList.remove('active');
+  document.getElementById('edge-next').classList.remove('active');
+  document.getElementById('edge-prev-fill').style.height='0%';
+  document.getElementById('edge-next-fill').style.height='0%';
+}
+
+function startEdgeFlip(direction){
+  // direction: -1 = prev month, +1 = next month
+  const fillEl = direction===-1
+    ? document.getElementById('edge-prev-fill')
+    : document.getElementById('edge-next-fill');
+
+  edgeFlipStart = performance.now();
+
+  function tick(now){
+    if(!dragItem){ clearEdgeFlip(); return; }
+    const elapsed = now - edgeFlipStart;
+    const pct = Math.min(100, (elapsed / EDGE_DELAY_MS) * 100);
+    fillEl.style.height = pct + '%';
+
+    if(elapsed >= EDGE_DELAY_MS){
+      // Flip the month
+      clearEdgeFlip();
+      if(direction === -1){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} }
+      else                 { calMonth++; if(calMonth>11){calMonth=0;calYear++;} }
+      renderCal();  // re-renders grid AND re-attaches listeners
+      showToast(direction===-1 ? '‹ 上個月' : '下個月 ›');
+      return;
+    }
+    edgeFlipTimer = requestAnimationFrame(tick);
+  }
+  edgeFlipTimer = requestAnimationFrame(tick);
+}
+
 function attachDragListeners(){
   const grid = document.getElementById('cal-grid');
   const ghost = document.getElementById('drag-ghost');
@@ -1118,9 +1213,53 @@ function attachDragListeners(){
       pill.classList.remove('dragging');
       ghost.style.display = 'none';
       dragItem = null;
+      clearEdgeFlip();
       // Clean up any lingering drag-over states
       grid.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
     });
+  });
+
+  // ── EDGE ZONE: show/hide during any drag over the cal-section ──
+  const calSection = document.getElementById('cal-section');
+
+  calSection.addEventListener('dragover', e=>{
+    if(!dragItem) return;
+    e.preventDefault();
+
+    const secRect = calSection.getBoundingClientRect();
+    const x = e.clientX - secRect.left;
+    const ZONE = 80; // px from edge
+
+    const inLeft  = x < ZONE;
+    const inRight = x > secRect.width - ZONE;
+
+    const edgePrev = document.getElementById('edge-prev');
+    const edgeNext = document.getElementById('edge-next');
+
+    if(inLeft){
+      edgeNext.classList.remove('active');
+      edgePrev.classList.add('active');
+      // Start flip timer if not already running for this direction
+      if(edgeFlipTimer === null){ startEdgeFlip(-1); }
+    } else if(inRight){
+      edgePrev.classList.remove('active');
+      edgeNext.classList.add('active');
+      if(edgeFlipTimer === null){ startEdgeFlip(+1); }
+    } else {
+      // Middle — clear any pending flip
+      if(edgeFlipTimer !== null){ clearEdgeFlip(); }
+      edgePrev.classList.remove('active');
+      edgeNext.classList.remove('active');
+    }
+  });
+
+  calSection.addEventListener('dragleave', e=>{
+    // Only clear when truly leaving the cal-section (not into a child)
+    if(!calSection.contains(e.relatedTarget)){
+      clearEdgeFlip();
+      document.getElementById('edge-prev').classList.remove('active');
+      document.getElementById('edge-next').classList.remove('active');
+    }
   });
 
   // Mouse move: track custom ghost position
