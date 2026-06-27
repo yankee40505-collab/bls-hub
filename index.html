@@ -309,9 +309,9 @@ body{
   padding:6px 0;
 }
 .cal-day{
-  min-height:72px;border-radius:8px;padding:7px 8px;
+  min-height:80px;border-radius:8px;padding:7px 8px;
   background:var(--bg1);border:1px solid rgba(200,168,48,.06);
-  cursor:default;position:relative;transition:border-color .15s;
+  cursor:default;position:relative;transition:border-color .15s, background .15s;
 }
 .cal-day.has-event{cursor:pointer}
 .cal-day.has-event:hover{border-color:var(--gold-bdr);background:var(--bg2)}
@@ -335,11 +335,51 @@ body{
 .cal-ev{
   font-size:11px;line-height:1.3;padding:2px 5px;border-radius:3px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  /* drag styles */
+  cursor:grab;
+  user-select:none;
+  transition:opacity .15s, transform .1s, box-shadow .1s;
 }
+.cal-ev:active{cursor:grabbing}
 .cal-ev.ev-prog{background:var(--prog-bg);color:var(--prog-c)}
 .cal-ev.ev-todo{background:var(--todo-bg);color:var(--todo-c)}
 .cal-ev.ev-done{background:var(--done-bg);color:var(--done-c)}
 .cal-ev.ev-proj{background:var(--gold-bg);color:var(--gold);border-left:2px solid var(--gold-d)}
+
+/* ── DRAG STATES ── */
+.cal-ev.dragging{
+  opacity:0.35;
+  transform:scale(0.95);
+}
+.cal-day.drag-over{
+  border-color:var(--gold) !important;
+  background:rgba(212,176,48,.18) !important;
+  box-shadow:0 0 0 2px rgba(212,176,48,.35), inset 0 0 12px rgba(212,176,48,.08);
+}
+.cal-day.drag-over .cal-dn{
+  color:var(--gold-l);
+}
+
+/* drag ghost tooltip */
+#drag-ghost{
+  position:fixed;
+  pointer-events:none;
+  z-index:9999;
+  background:var(--bg2);
+  border:1px solid var(--gold-bdr);
+  border-radius:6px;
+  padding:4px 10px;
+  font-size:12px;
+  color:var(--gold-l);
+  font-family:'Hanken Grotesk',sans-serif;
+  box-shadow:0 8px 24px rgba(0,0,0,.7);
+  white-space:nowrap;
+  max-width:180px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:none;
+}
+
 .cal-legend{
   display:flex;align-items:center;gap:18px;margin-top:16px;flex-wrap:wrap;
 }
@@ -382,9 +422,29 @@ body{
 .day-pop-item:last-child{border-bottom:none}
 .day-pop-ic{font-size:11px;margin-top:1px;flex-shrink:0}
 .day-pop-add{float:right;background:var(--gold);color:#000;border:none;border-radius:5px;padding:2px 9px;font-size:11px;cursor:pointer;font-family:inherit}
+
+/* reschedule toast */
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes toastOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(6px)}}
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:var(--bg2);border:1px solid var(--gold-bdr);
+  border-radius:9px;padding:10px 18px;
+  font-size:12.5px;color:var(--text);
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  z-index:999;
+  display:flex;align-items:center;gap:9px;
+  animation:toastIn .2s ease both;
+  white-space:nowrap;
+}
+.toast.out{animation:toastOut .3s ease forwards}
+.toast-icon{font-size:14px}
 </style>
 </head>
 <body>
+
+<!-- DRAG GHOST -->
+<div id="drag-ghost"></div>
 
 <!-- HEADER -->
 <header class="hdr">
@@ -442,6 +502,7 @@ body{
     <div class="leg-item"><div class="leg-dot leg-dot-done"></div>已完成</div>
     <div class="leg-item"><div class="leg-dot leg-dot-gold"></div>專案截止</div>
     <div class="leg-item"><div class="leg-dot leg-dot-urg"></div>今天</div>
+    <div class="leg-item" style="margin-left:auto;opacity:.6;font-size:10px;">✦ 活動可拖曳移位</div>
   </div>
 </div>
 
@@ -558,7 +619,7 @@ body{
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 // ══════════════════════════════════════════
-//  🔥 貼上你的 Firebase 設定
+//  🔥 Firebase 設定
 // ══════════════════════════════════════════
 const FB = {
   apiKey:            "AIzaSyCdbPKIuIXD-KTuwzgFyul_jJlyAf-oBBo",
@@ -574,8 +635,8 @@ const FB = {
 
 const USE_FB = FB.apiKey !== 'YOUR_API_KEY';
 let db = null;
-let projects = {};  // { id: {name, urgency, dateStart, dateEnd, notes, createdAt} }
-let todos = {};     // { id: {name, status, difficulty, date, projectId, notes, createdAt} }
+let projects = {};
+let todos = {};
 let editProjId = null;
 let editTodoId = null;
 
@@ -636,6 +697,7 @@ function render() {
   renderProjects();
   renderTodos();
   renderStats();
+  renderCal();
 }
 
 function renderStats() {
@@ -654,8 +716,6 @@ function renderStats() {
   document.getElementById('sn-todo').textContent = todoArr.length;
   document.getElementById('sn-done').textContent = done;
   document.getElementById('sn-due').textContent  = dueWk;
-
-  // In-progress warning (max 5 like Notion)
   document.getElementById('prog-warn').style.display = inProg>=5 ? 'flex':'none';
 }
 
@@ -696,7 +756,6 @@ function renderTodos() {
   Object.entries(todos).forEach(([id,t])=>{
     if(groups[t.status]) groups[t.status].push([id,t]);
   });
-  // Sort each group
   Object.values(groups).forEach(arr=>{
     arr.sort((a,b)=>{
       const da=a[1].date||'9999',db2=b[1].date||'9999';
@@ -741,7 +800,7 @@ function renderTodos() {
   el.innerHTML = html;
 }
 
-/* ── QUICK TOGGLE (check to done) ── */
+/* ── QUICK TOGGLE ── */
 function quickToggle(id) {
   const t = todos[id]; if(!t) return;
   const next = t.status==='完成' ? '尚未完成' : '完成';
@@ -829,7 +888,6 @@ function saveProj(){
 
 function deleteProj(){
   if(!editProjId||!confirm('刪除此專案？相關待辦事項的關聯也會移除。'))return;
-  // Unlink todos
   Object.entries(todos).forEach(([tid,t])=>{
     if(t.projectId===editProjId){
       todos[tid]={...t,projectId:''};
@@ -934,8 +992,14 @@ function showHelp(){
     '設定完成後，兩個人同時開啟頁面，編輯即時同步 ✦');
 }
 
-/* ── CALENDAR ── */
+/* ════════════════════════════════════════
+   CALENDAR + DRAG-TO-RESCHEDULE
+   ════════════════════════════════════════ */
 let calYear, calMonth;
+
+// Drag state
+let dragItem = null;  // { type: 'todo'|'proj', id, label }
+
 (function initCal(){
   const now = new Date();
   calYear = now.getFullYear();
@@ -954,19 +1018,18 @@ function renderCal(){
   document.getElementById('cal-year').textContent  = calYear;
 
   const today = new Date(); today.setHours(0,0,0,0);
-  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
 
-  // Build lookup: dateStr → [{type, label, status}]
   const evMap = {};
   const addEv = (ds, ev) => { if(!ds)return; if(!evMap[ds])evMap[ds]=[]; evMap[ds].push(ev); };
 
-  Object.values(todos).forEach(t=>{
-    if(t.date) addEv(t.date, {type:'todo', label:t.name, status:t.status});
+  Object.entries(todos).forEach(([id,t])=>{
+    if(t.date) addEv(t.date, {type:'todo', id, label:t.name, status:t.status});
   });
-  Object.values(projects).forEach(p=>{
-    if(p.dateEnd) addEv(p.dateEnd, {type:'proj', label:p.name, status:'deadline'});
+  Object.entries(projects).forEach(([id,p])=>{
+    if(p.dateEnd) addEv(p.dateEnd, {type:'proj', id, label:p.name, status:'deadline'});
   });
 
   let html = DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
@@ -984,21 +1047,34 @@ function renderCal(){
     const isToday = dt.getTime()===today.getTime();
     const hasEv = evs.length>0;
 
-    const dots = evs.slice(0,6).map(e=>{
+    // Event pills (show up to 2, rest as dot overflow)
+    const shownEvs = evs.slice(0,2);
+    const extraDots = evs.slice(2);
+
+    const dots = extraDots.map(e=>{
       const dc = e.type==='proj'?'d-done': e.status==='進行中'?'d-prog':e.status==='完成'?'d-done':'d-todo';
       return `<div class="cal-dot ${dc}"></div>`;
     }).join('');
 
-    const evLabels = evs.slice(0,2).map(e=>{
+    const evPills = shownEvs.map(e=>{
       const cls = e.type==='proj'?'ev-proj':e.status==='進行中'?'ev-prog':e.status==='完成'?'ev-done':'ev-todo';
-      return `<div class="cal-ev ${cls}">${esc(e.label)}</div>`;
+      // data attributes for drag
+      return `<div class="cal-ev ${cls}"
+        draggable="true"
+        data-type="${e.type}"
+        data-id="${e.id}"
+        data-label="${esc(e.label)}"
+        onclick="event.stopPropagation()"
+        title="${esc(e.label)} — 拖曳可移到其他日期"
+      >${esc(e.label)}</div>`;
     }).join('');
 
     html+=`<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''} has-event"
+      data-date="${ds}"
       onclick="calDayClick(event,'${ds}')">
       <div class="cal-dn">${d}</div>
+      ${evPills}
       ${dots?`<div class="cal-dots">${dots}</div>`:''}
-      <div class="cal-events">${evLabels}</div>
       <button type="button" class="cal-day-add" onclick="event.stopPropagation();openTodoModal(null,null,'${ds}')" title="新增待辦">＋</button>
     </div>`;
   }
@@ -1011,20 +1087,134 @@ function renderCal(){
   }
 
   document.getElementById('cal-grid').innerHTML = html;
+  attachDragListeners();
 }
 
+/* ── DRAG & DROP ── */
+function attachDragListeners(){
+  const grid = document.getElementById('cal-grid');
+  const ghost = document.getElementById('drag-ghost');
+
+  // Drag source: event pills
+  grid.querySelectorAll('.cal-ev[draggable]').forEach(pill=>{
+    pill.addEventListener('dragstart', e=>{
+      dragItem = {
+        type: pill.dataset.type,
+        id:   pill.dataset.id,
+        label: pill.dataset.label
+      };
+      pill.classList.add('dragging');
+      ghost.textContent = (dragItem.type==='proj'?'📁 ':'📌 ') + dragItem.label;
+      ghost.style.display = 'block';
+
+      // Use transparent image so the ghost only shows our custom div
+      const blank = document.createElement('canvas');
+      blank.width = blank.height = 1;
+      e.dataTransfer.setDragImage(blank, 0, 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    pill.addEventListener('dragend', ()=>{
+      pill.classList.remove('dragging');
+      ghost.style.display = 'none';
+      dragItem = null;
+      // Clean up any lingering drag-over states
+      grid.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+    });
+  });
+
+  // Mouse move: track custom ghost position
+  document.addEventListener('mousemove', e=>{
+    if(dragItem){
+      ghost.style.left = (e.clientX + 14) + 'px';
+      ghost.style.top  = (e.clientY - 10) + 'px';
+    }
+  });
+
+  // Drop targets: day cells
+  grid.querySelectorAll('.cal-day:not(.other-month)').forEach(cell=>{
+    cell.addEventListener('dragover', e=>{
+      if(!dragItem) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      // Highlight only this cell
+      grid.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+      cell.classList.add('drag-over');
+    });
+
+    cell.addEventListener('dragleave', e=>{
+      // Only remove if we're leaving to outside the cell (not a child)
+      if(!cell.contains(e.relatedTarget)){
+        cell.classList.remove('drag-over');
+      }
+    });
+
+    cell.addEventListener('drop', e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      cell.classList.remove('drag-over');
+      if(!dragItem) return;
+
+      const targetDate = cell.dataset.date;
+      if(!targetDate) return;
+
+      reschedule(dragItem.type, dragItem.id, targetDate, dragItem.label);
+      dragItem = null;
+      ghost.style.display = 'none';
+    });
+  });
+}
+
+/* ── RESCHEDULE LOGIC ── */
+function reschedule(type, id, newDate, label){
+  if(type === 'todo'){
+    const t = todos[id];
+    if(!t || t.date === newDate) return;
+    const oldDate = t.date;
+    todos[id] = {...t, date: newDate, updatedAt: Date.now()};
+    if(USE_FB) db.ref('bls_todo/'+id).update({date: newDate, updatedAt: Date.now()});
+    else { saveLocal(); render(); }
+    showToast(`📌 "${label}" 移到 ${fmtDate(newDate)}`);
+  } else if(type === 'proj'){
+    const p = projects[id];
+    if(!p || p.dateEnd === newDate) return;
+    projects[id] = {...p, dateEnd: newDate, updatedAt: Date.now()};
+    if(USE_FB) db.ref('bls_proj/'+id).update({dateEnd: newDate, updatedAt: Date.now()});
+    else { saveLocal(); render(); }
+    showToast(`📁 "${label}" 截止移到 ${fmtDate(newDate)}`);
+  }
+}
+
+/* ── TOAST NOTIFICATION ── */
+let toastTimer = null;
+function showToast(msg){
+  // Remove existing
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span class="toast-icon">✦</span><span>${msg}</span>`;
+  document.body.appendChild(t);
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{
+    t.classList.add('out');
+    setTimeout(()=>t.remove(), 320);
+  }, 2600);
+}
+
+/* ── DAY CLICK (popover, not drag) ── */
 function calDayClick(e, ds){
+  // Don't open popover if we just finished a drag
+  if(dragItem) return;
+
   const evs = [];
-  Object.values(todos).forEach(t=>{ if(t.date===ds) evs.push({type:'todo',label:t.name,status:t.status}); });
-  Object.values(projects).forEach(p=>{ if(p.dateEnd===ds) evs.push({type:'proj',label:p.name,status:'deadline'}); });
+  Object.entries(todos).forEach(([id,t])=>{ if(t.date===ds) evs.push({type:'todo',id,label:t.name,status:t.status}); });
+  Object.entries(projects).forEach(([id,p])=>{ if(p.dateEnd===ds) evs.push({type:'proj',id,label:p.name,status:'deadline'}); });
 
   if(!evs.length){
-    // Empty day: directly open new todo modal with that date pre-filled
     openTodoModal(null,null,ds);
     return;
   }
 
-  // Day has events: show popover
   const pop = document.getElementById('day-pop');
   const dt=new Date(ds+'T00:00:00');
   const title=dt.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
@@ -1048,10 +1238,6 @@ function calDayClick(e, ds){
 }
 
 document.addEventListener('click',()=>{ document.getElementById('day-pop').classList.add('hidden'); });
-
-// Re-render calendar whenever data changes
-const _origRender = render;
-render = function(){ _origRender(); renderCal(); };
 </script>
 </body>
 </html>
