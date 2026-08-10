@@ -145,6 +145,15 @@ body{
 }
 .u-crit{background:var(--urg-bg);color:var(--urg);border:1px solid rgba(200,72,64,.25)}
 .u-norm{background:var(--norm-bg);color:var(--norm);border:1px solid rgba(200,152,40,.25)}
+.cat-tag{
+  font-family:'DM Mono',monospace;font-size:9.5px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;
+  border-radius:4px;white-space:nowrap;display:inline-flex;align-items:center;
+}
+.cat-dlb{
+  background:#fff;color:#0B1F3A;border:1px solid rgba(255,255,255,.82);
+  box-shadow:0 1px 4px rgba(0,0,0,.24);
+}
 
 /* ───── PROJECT CARD ───── */
 .pcard{
@@ -598,6 +607,12 @@ body{
     </div>
     <div class="form">
       <div class="field"><label class="lbl">專案名稱 *</label><input id="pm-name" type="text" placeholder="專案名稱…"/></div>
+      <div class="field"><label class="lbl">類別</label>
+        <select id="pm-cat" title="類別">
+          <option value="">— 無 —</option>
+          <option value="dlb">DLB ENTERTAINMENT</option>
+        </select>
+      </div>
       <div class="field"><label class="lbl">專案急迫性</label>
         <select id="pm-urg" title="專案急迫性">
           <option value="norm">普通</option>
@@ -630,6 +645,12 @@ body{
     </div>
     <div class="form">
       <div class="field"><label class="lbl">待辦事項 *</label><input id="tm-name" type="text" placeholder="要做什麼？"/></div>
+      <div class="field"><label class="lbl">類別</label>
+        <select id="tm-cat" title="類別">
+          <option value="">— 無 —</option>
+          <option value="dlb">DLB ENTERTAINMENT</option>
+        </select>
+      </div>
       <div class="frow">
         <div class="field"><label class="lbl">狀態</label>
           <select id="tm-status" title="狀態">
@@ -654,7 +675,7 @@ body{
         </div>
       </div>
       <div class="field"><label class="lbl">關聯專案</label>
-        <select id="tm-proj" title="關聯專案"><option value="">— 無 —</option></select>
+        <select id="tm-proj" title="關聯專案" onchange="syncTodoCategoryFromProject()"><option value="">— 無 —</option></select>
       </div>
       <div class="field"><label class="lbl">總結 / 備注</label><textarea id="tm-notes" placeholder="補充說明…"></textarea></div>
     </div>
@@ -787,6 +808,7 @@ function renderProjects() {
     const urgCls = p.urgency==='crit'?'u-crit':'u-norm';
     const urgTxt = p.urgency==='crit'?'超重要':'普通';
     const cardCls = p.urgency==='crit'?'crit':'norm';
+    const catBadge = p.category==='dlb'?'<span class="cat-tag cat-dlb">DLB ENTERTAINMENT</span>':'';
     return `<div class="pcard ${cardCls}" onclick="openProjModal('${id}')">
       <div class="pcard-top">
         <div class="pcard-name">${esc(p.name)}</div>
@@ -795,6 +817,7 @@ function renderProjects() {
       ${p.dateEnd?`<div class="pcard-dates">🗓 截止 ${fmtDate(p.dateEnd)}</div>`:''}
       ${p.notes?`<div class="pcard-notes">${esc(p.notes)}</div>`:''}
       <div class="pcard-foot">
+        ${catBadge}
         ${relTodos.length?`<span class="todo-cnt">${doneTodos}/${relTodos.length} 待辦完成</span>`:''}
         ${p.dateEnd?`<span class="dl-tag ${dlClass(p.dateEnd)} todo-cnt">${dlLabel(p.dateEnd)}</span>`:''}
       </div>
@@ -835,12 +858,14 @@ function renderTodos() {
       const stCls = {完成:'st-done',進行中:'st-prog',尚未完成:'st-todo'}[t.status]||'st-todo';
       const diffMap = {困難:'🔴',普通:'🟡',簡單:'🟢'};
       const dc=dlClass(t.date), dl=dlLabel(t.date);
+      const category = t.category||(proj&&proj.category)||'';
       html+=`<div class="todo${isDone?' done-item':''}" onclick="openTodoModal('${id}')">
         <div class="todo-check" onclick="event.stopPropagation();quickToggle('${id}')">${isDone?'✓':''}</div>
         <div class="todo-main">
           <div class="todo-name">${esc(t.name)}</div>
           <div class="todo-meta">
             <span class="st-badge ${stCls}">${t.status}</span>
+            ${category==='dlb'?'<span class="cat-tag cat-dlb">DLB ENTERTAINMENT</span>':''}
             ${t.difficulty?`<span class="diff-badge">${diffMap[t.difficulty]||''} ${t.difficulty}</span>`:''}
             ${dl?`<span class="dl-tag ${dc}">${dl}</span>`:''}
             ${proj?`<span class="proj-link">↳ ${esc(proj.name)}</span>`:''}
@@ -906,6 +931,7 @@ function openProjModal(id) {
     const p=projects[id];
     document.getElementById('pm-title').textContent='編輯專案';
     document.getElementById('pm-name').value  = p.name||'';
+    document.getElementById('pm-cat').value   = p.category||'';
     document.getElementById('pm-urg').value   = p.urgency||'norm';
     buildDateSel('pm-end', p.dateEnd||'');
     document.getElementById('pm-notes').value = p.notes||'';
@@ -913,6 +939,7 @@ function openProjModal(id) {
   } else {
     document.getElementById('pm-title').textContent='新增專案';
     document.getElementById('pm-name').value='';
+    document.getElementById('pm-cat').value='';
     document.getElementById('pm-urg').value='norm';
     buildDateSel('pm-end','');
     document.getElementById('pm-notes').value='';
@@ -927,6 +954,7 @@ function saveProj(){
   const id = editProjId||uid();
   const p = {
     name,
+    category: document.getElementById('pm-cat').value,
     urgency: document.getElementById('pm-urg').value,
     dateEnd: getDateSel('pm-end'),
     notes:   document.getElementById('pm-notes').value.trim(),
@@ -959,6 +987,7 @@ function openTodoModal(id, defaultProjId, defaultDate) {
   Object.entries(projects).sort((a,b)=>a[1].name.localeCompare(b[1].name,'zh-TW')).forEach(([pid,p])=>{
     sel.innerHTML+=`<option value="${pid}">${esc(p.name)}</option>`;
   });
+  const selectedProject = projects[defaultProjId]||null;
   if(id&&todos[id]){
     const t=todos[id];
     document.getElementById('tm-title').textContent='編輯待辦';
@@ -967,6 +996,7 @@ function openTodoModal(id, defaultProjId, defaultDate) {
     document.getElementById('tm-diff').value   = t.difficulty||'普通';
     buildDateSel('tm-date', t.date||'');
     document.getElementById('tm-proj').value   = t.projectId||'';
+    document.getElementById('tm-cat').value    = t.category||(projects[t.projectId]||{}).category||'';
     document.getElementById('tm-notes').value  = t.notes||'';
     document.getElementById('tm-del').classList.remove('hidden');
   } else {
@@ -976,10 +1006,18 @@ function openTodoModal(id, defaultProjId, defaultDate) {
     document.getElementById('tm-diff').value='普通';
     buildDateSel('tm-date', defaultDate||'');
     document.getElementById('tm-proj').value=defaultProjId||'';
+    document.getElementById('tm-cat').value=(selectedProject&&selectedProject.category)||'';
     document.getElementById('tm-notes').value='';
     document.getElementById('tm-del').classList.add('hidden');
   }
   openOverlay('todo-overlay');
+}
+
+function syncTodoCategoryFromProject(){
+  const projectId=document.getElementById('tm-proj').value;
+  if(projectId&&projects[projectId]){
+    document.getElementById('tm-cat').value=projects[projectId].category||'';
+  }
 }
 
 function saveTodo(){
@@ -993,6 +1031,7 @@ function saveTodo(){
   const id=editTodoId||uid();
   const t={
     name,
+    category: document.getElementById('tm-cat').value,
     status,
     difficulty:document.getElementById('tm-diff').value,
     date:      getDateSel('tm-date'),
