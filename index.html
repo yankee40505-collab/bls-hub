@@ -354,6 +354,10 @@ body{
 .cal-ev.ev-todo{background:var(--todo-bg);color:var(--todo-c)}
 .cal-ev.ev-done{background:var(--done-bg);color:var(--done-c)}
 .cal-ev.ev-proj{background:var(--gold-bg);color:var(--gold);border-left:2px solid var(--gold-d)}
+.cal-ev.ev-dlb{
+  background:#fff;color:#0B1F3A;border:1px solid rgba(255,255,255,.82);
+  box-shadow:0 1px 4px rgba(0,0,0,.24);
+}
 
 /* ── DRAG STATES ── */
 .cal-ev.dragging{
@@ -1117,10 +1121,11 @@ function renderCal(){
   const addEv = (ds, ev) => { if(!ds)return; if(!evMap[ds])evMap[ds]=[]; evMap[ds].push(ev); };
 
   Object.entries(todos).forEach(([id,t])=>{
-    if(t.date) addEv(t.date, {type:'todo', id, label:t.name, status:t.status});
+    const category = t.category||(projects[t.projectId]||{}).category||'';
+    if(t.date) addEv(t.date, {type:'todo', id, label:t.name, status:t.status, category});
   });
   Object.entries(projects).forEach(([id,p])=>{
-    if(p.dateEnd) addEv(p.dateEnd, {type:'proj', id, label:p.name, status:'deadline'});
+    if(p.dateEnd) addEv(p.dateEnd, {type:'proj', id, label:p.name, status:'deadline', category:p.category||''});
   });
 
   let html = DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
@@ -1148,7 +1153,7 @@ function renderCal(){
     }).join('');
 
     const evPills = shownEvs.map(e=>{
-      const cls = e.type==='proj'?'ev-proj':e.status==='進行中'?'ev-prog':e.status==='完成'?'ev-done':'ev-todo';
+      const cls = e.category==='dlb'?'ev-dlb':e.type==='proj'?'ev-proj':e.status==='進行中'?'ev-prog':e.status==='完成'?'ev-done':'ev-todo';
       // data attributes for drag
       return `<div class="cal-ev ${cls}"
         draggable="true"
